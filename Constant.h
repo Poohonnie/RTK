@@ -1,8 +1,11 @@
 ﻿#pragma once
 #include <cmath>
 
-const double PI = 3.14159265358979323846;//圆周率，小数点后20位
-const double C = 2.99792458e+8;//光速c, 单位 m/s
+namespace constant
+{
+	const double pi = 3.14159265358979323846;//圆周率，小数点后20位
+	const double c = 2.99792458e+8;//光速c, 单位 m/s
+}
 
 struct CoorSys
 {

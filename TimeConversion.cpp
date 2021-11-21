@@ -1,5 +1,15 @@
 #include "TimeConversion.h"
 #include <cmath>
+double SoWSubtraction(double t, double toc)
+{
+	double result = t - toc;
+	if (result > 302400)
+		result -= 604800;
+	else if (result < -302400)
+		result += 604800;
+	return result;
+}
+
 double CommonTime2UT(const COMMONTIME& commonTime)
 {
 	/*以小时为单位的UT*/
@@ -163,14 +173,23 @@ void GPSTIME::check()
 
 double GPSTIME::operator-(const GPSTIME& sub) const
 {
-	//仅支持大数减小数
-	double result;
-	if ((this->week - sub.week) * 604800.0 + (this->secOfWeek - sub.secOfWeek) < 0)
-		return -114.514;
-	else
+	double result = -114.514;
+	result = SoWSubtraction(this->week * 604800.0 + this->secOfWeek, sub.week * 604800.0 + sub.secOfWeek);
+	return result;
+}
+
+GPSTIME GPSTIME::operator-(const double sub) const
+{
+	GPSTIME result;
+	if (this->secOfWeek - sub < 0)
 	{
-		result = (this->week - sub.week) * 604800.0 + (this->secOfWeek - sub.secOfWeek);
-		return result;
+		result.secOfWeek = this->secOfWeek - sub + 604800.0;
+		result.week = this->week - 1;
 	}
-	return -114.514;
+	else
+	{	
+		result.secOfWeek = this->secOfWeek - sub;
+		result.week = this->week;
+	}
+	return result;
 }

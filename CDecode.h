@@ -1,8 +1,12 @@
 ﻿#pragma once
+#pragma comment(lib,"WS2_32.lib")
+#pragma warning(disable:4996)
+
 #include "TimeConversion.h"
 #include "CoordinateConversion.hpp"
 #include "Constant.h"
 #include <fstream>
+#include <windows.h>
 
 constexpr auto MAXCHANNELNUM = 36;
 constexpr auto MAXGPSNUM = 32;
@@ -21,15 +25,27 @@ struct SATOBS
 	double cnr;//载噪比
 	double psrSigma[2];//伪距精度
 	double cpSigma[2];//载波精度
-	bool Valid;//通道状态
+	bool valid = false;//通道状态
+
+	SATOBS()
+	{
+		memset(this, sizeof(SATOBS), 0);
+	};
+	void check();//检测双频伪距和相位数据是否完整有效
 };
 
-struct EPCOBS
+struct EPKOBS
 {
 	//一段时间内全部观测卫星的数据
 	GPSTIME t;
 	int satNum;//卫星总数
 	SATOBS satObs[MAXCHANNELNUM];//单个历元所有卫星的观测值 
+
+	EPKOBS()
+	{
+		memset(this, sizeof(EPKOBS), 0);
+	}
+	int FindSatObsIndex(const int prn, const GNSS sys);//搜索某个prn号的卫星在epkObs中的下标
 };
 
 struct GPSEPHEM
@@ -43,7 +59,7 @@ struct GPSEPHEM
 	double A;//长半轴 A
 	double deltaN;//Mean anomaly correction (rad/sec)
 	double m0;//Mean anomaly at reference time (semicircles)
-	double ecc;//Eccentricity
+	double ecc;//卫星轨道偏心率
 
 	double omega;//近地点角距
 	double omega0;//升交点经度
@@ -55,13 +71,17 @@ struct GPSEPHEM
 
 	double i0, iDot;//倾角 磁倾角变化率
 	unsigned long iodc;//issue of data clock BDS为AODC
-	double toc;//SV clock correction term
+	GPSTIME toc;//SV clock correction term
 	double tgd;//Equipment group delay differential
 	double af[3];//时钟改正值 单位s s/s s/s²
 	double N;//corrected mean motion
 
 	bool as;//Anti-spoofing
 	double ura;//用户测距精度
+	GPSEPHEM()
+	{
+		memset(this, sizeof(GPSEPHEM), 0);
+	}
 };
 
 struct BDSEPHEM
@@ -78,7 +98,8 @@ struct BDSEPHEM
 
 	unsigned long aode;//age of data, ephemeris
 	double rootA;//长半轴的根
-	double ecc;//Eccentricity
+	double A;
+	double ecc;//卫星轨道偏心率
 	double omega;//近地点角距
 	double omega0;//升交点经度
 	double omegaDot;//赤经率
@@ -88,53 +109,62 @@ struct BDSEPHEM
 
 	double i0, iDot;//倾角 磁倾角变化率
 
-	double cuc, cus;//谐波修正项 单位
-	double crc, crs;//谐波修正项 单位rad   m
+	double cuc, cus;//谐波修正项 单位rad   m
+	double crc, crs;//谐波修正项 单位
 	double cic, cis;//谐波修正项 单位
 
+	BDSEPHEM()
+	{
+		memset(this, sizeof(BDSEPHEM), 0);
+	}
+	bool isGeo() const;//判断是否为GEO
 };
 
-struct PSRPOS
+struct BESTPOS
 {
 	//伪距单点定位位置信息
 	GPSTIME time;
 	BLH blh;
 	double ura;//用户测距精度
+	BESTPOS()
+	{
+		memset(this, sizeof(BESTPOS), 0);
+	}
+};
+
+struct RAWDATA
+{
+	EPKOBS epkObs;
+	GPSEPHEM gpsEphem[MAXGPSNUM];
+	BDSEPHEM bdsEphem[MAXBDSNUM];
+	BESTPOS bestPos;
 };
 
 class CDecode
 {
 protected:
-	EPCOBS epcObs;//一段时间内全部观测卫星的数据
-	GPSEPHEM gpsEphem;//GPS卫星星历
-	BDSEPHEM bdsEphem;//BDS卫星星历
-	PSRPOS psrPos;//伪距单点定位位置信息
+	GPSTIME t;
+	RAWDATA raw;
 
 public:
-	friend class SatPositioning;//声明友元类，方便数据解算
+	void Reset();
+	friend class Client;
 
-	int DecodeOem719Msg(FILE* fp);//文件解码
 	void DecodeOem719Obs(unsigned char* buf);//MsgID 43 range 解码
 	void DecodeOem719GpsEphem(unsigned char* buf);//MsgID 7 GPS ephemeris解码
 	void DecodeOem719BdsEphem(unsigned char* buf);//MsgID 1696 BDS ephemeris解码
-	void DecodeOem719Psrpos(unsigned char* buf);//MsgID 47 PSRPOS解码
+	void DecodeOem719Bestpos(unsigned char* buf);//MsgID 47 PSRPOS解码
 
-	int FindSatObsIndex(const int prn, const GNSS sys);
 
 	//NovAtel CRC校验程序
 	unsigned int crc32(const unsigned char* buf, int lenth);
-	unsigned long CRC32Value(int i);
-	unsigned long CalculateBloackCRC32(unsigned long ulCount, unsigned char* ucBuffer);
 
 	unsigned short U2(unsigned char* buf);//读取两个字节
 	unsigned int U4(unsigned char* buf);//读取四个字节
 	double R8(unsigned char* buf);//读取八个字节
 
 	//外部接口
-	EPCOBS EpcObs();//一段时间内全部观测卫星的数据  外部接口
-	GPSEPHEM GpsEphem();//GPS卫星星历  外部接口
-	BDSEPHEM BdsEphem();//BDS卫星星历  外部接口
-	PSRPOS PsrPos();//伪距单点定位位置信息  外部接口
+	RAWDATA Raw();//SPP原始数据 外部接口
 
 };
 
@@ -144,5 +174,29 @@ protected:
 
 public:
 	FILE* FileRead(const char*);
+	int DecodeOem719Msg(FILE* fp);//文件解码
 
+	CFileDecode()
+	{
+		memset(this, 0, sizeof(CFileDecode));
+	}
+
+};
+
+class CSocketDecode : public CDecode
+{
+protected:
+
+public:
+	int DecodeOem719Msg(unsigned char* buf, int curRem, int& lastRem);//文件解码
+
+
+
+	bool OpenSocket(SOCKET& sock, const char IP[], const unsigned short Port);//打开串口
+	void CloseSocket(SOCKET& sock);//关闭串口
+
+	CSocketDecode()
+	{
+		memset(this, 0, sizeof(CSocketDecode));
+	}
 };

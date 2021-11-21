@@ -6,17 +6,20 @@
 #include "CoordinateConversion.hpp"
 #include "Constant.h"
 #include "CDecode.h"
-
+#include "SatPositioning.hpp"
+#include "CDetectOutlier.h"
+#include "Client.h"
 
 int main()
 {
-	CFileDecode fileDecode;
-	char fileName[50] = "OEM719-1126\\202010261820.oem719";
-	FILE* fp = fileDecode.FileRead(fileName);
-	while (1)
-	{
-		fileDecode.DecodeOem719Msg(fp);
-	}
+	Client client;
+	client.Run();
+	//double a[9] = { 1.9, 2.3, 3.4, 4, 4.13, 6, 7, 7.9, 8 };
+	//double b[3] = { 3.14, 2.74, 9.81 };
+	//CMatrix A(a, 3, 3);
+	//CMatrix B(b, 3, 1);
+	//CMatrix pro = A * B;
+	//pro.Show();
 
 	return 0;
 }

@@ -25,8 +25,9 @@ CMatrix::CMatrix(double* Mat, int Rows, int Cols)
 	}
 	else
 	{
-		std::cout << "矩阵维数不能为0" << std::endl;
-		std::abort();
+		this->rows = 0;
+		this->cols = 0;
+		this->mat = nullptr;
 	}
 };//构造函数
 
@@ -46,8 +47,9 @@ CMatrix::CMatrix(int Rows, int Cols)
 	}
 	else
 	{
-		std::cout << "矩阵维数不能为0" << std::endl;
-		std::abort();
+		this->rows = 0;
+		this->cols = 0;
+		this->mat = nullptr;
 	}
 }
 
@@ -79,8 +81,7 @@ CMatrix CMatrix::Eye(int n)
 	}
 	else
 	{
-		std::cout << "矩阵维数不能为0" << std::endl;
-		std::abort();
+		return Eye(1);
 	}
 }
 
@@ -128,10 +129,7 @@ double CMatrix::Read(int m, int n)
 	if (m <= this->rows && n <= this->cols)
 		return this->mat[m * this->cols + n];
 	else
-	{
-		std::cout << "序号不在矩阵范围内" << std::endl;
-		std::abort();
-	}
+		return -114.514;
 }
 
 bool CMatrix::isSquare()
@@ -145,9 +143,15 @@ bool CMatrix::isSquare()
 		return false;
 	}
 	else
+		return false;
+}
+
+void CMatrix::check()
+{
+	for (int i = 0; i < this->cols * this->rows; i++)
 	{
-		std::cout << "矩阵为空" << std::endl;
-		std::abort();
+		if (fabs(this->mat[i]) < 1e-15)
+			this->mat[i] = 0;
 	}
 }
 
@@ -167,11 +171,7 @@ CMatrix CMatrix::operator+(const CMatrix& addMat/*被加矩阵*/) const
 		return sumMatrix;
 	}
 	else
-	{
-		//维数不一致直接退出程序
-		std::cout << "矩阵维数不一致，无法进行加法运算。" << std::endl;
-		std::abort();
-	}
+		return *this;
 }
 
 CMatrix CMatrix::operator-(const CMatrix& subMat/*减数矩阵*/) const
@@ -190,11 +190,7 @@ CMatrix CMatrix::operator-(const CMatrix& subMat/*减数矩阵*/) const
 		return differenceMatrix;
 	}
 	else
-	{
-		//维数不一致直接退出程序
-		std::cout << "矩阵维数不一致，无法进行减法运算" << std::endl;
-		std::abort();
-	}
+		return *this;
 }
 
 CMatrix& CMatrix::operator=(const CMatrix& orig)
@@ -221,18 +217,14 @@ CMatrix& CMatrix::operator+=(const CMatrix& addMat)
 		return *this;
 	}
 	else
-	{
-		//维数不一致直接退出程序
-		std::cout << "矩阵维数不一致，无法进行加法运算。" << std::endl;
-		std::abort();
-	}
+		return *this;
 }
 
 CMatrix& CMatrix::operator-=(const CMatrix& subMat)
 {
 	if (this->rows == subMat.rows && this->cols == subMat.cols)
 	{
-		//矩阵维数一致才可以进行加法运算
+		//矩阵维数一致才可以进行减法运算
 		for (int i = 0; i < this->rows * this->cols; i++)
 		{
 			this->mat[i] -= subMat.mat[i];
@@ -240,11 +232,7 @@ CMatrix& CMatrix::operator-=(const CMatrix& subMat)
 		return *this;
 	}
 	else
-	{
-		//维数不一致直接退出程序
-		std::cout << "矩阵维数不一致，无法进行减法运算。" << std::endl;
-		std::abort();
-	}
+		return *this;
 }
 
 CMatrix CMatrix::operator*(const CMatrix& multiplierMat/*乘数矩阵*/) const
@@ -268,11 +256,15 @@ CMatrix CMatrix::operator*(const CMatrix& multiplierMat/*乘数矩阵*/) const
 		return productMatrix;
 	}
 	else
-	{
-		//维数不一致直接退出程序
-		std::cout << "矩阵维数不匹配，无法进行乘法运算" << std::endl;
-		std::abort();
-	}
+		return *this;
+}
+
+CMatrix CMatrix::operator*(const double num) const
+{
+	CMatrix result(*this);
+	for (int i = 0; i < result.cols * result.rows; i++)
+		result.mat[i] = num * result.mat[i];
+	return result;
 }
 
 CMatrix CMatrix::Inv()
@@ -313,8 +305,7 @@ CMatrix CMatrix::Inv()
 
 		if (abs(d) < 1.0E-15)
 		{
-			printf("Divided by 0 in MatrixInv!\n");
-			std::abort();
+			return Eye(n);
 		}
 
 		if (is[k] != k)  /* 对主元素所在的行与右下角方阵的首行进行调换 */
@@ -427,18 +418,28 @@ CMatrix CMatrix::Trans()
 	return transMat;
 }
 
-int CMatrix::Row() const
+void CMatrix::AddRow(double* vec, int aimRow)
 {
-	/********************************
-	*		外部访问行数目的接口
-	********************************/
-	return this->rows;
+	if (aimRow > this->rows || aimRow < 0)
+		//最多在数组最下面一行多扩展一行
+		return;
+	CMatrix temp(this->rows + 1, this->cols);
+	memcpy(temp.mat, this->mat, aimRow * this->cols * 8);
+	for (int i = 0; i < temp.cols; i++)
+	{
+		if(fabs(vec[i]) < 1e+60)
+			temp.mat[aimRow * temp.cols + i] = vec[i];
+		else
+			temp.mat[aimRow * temp.cols + i] = 0;
+	}
+	memcpy(temp.mat + (aimRow + 1) * temp.cols, this->mat + aimRow * this->cols, (this->rows - aimRow) * this->cols * 8);//将剩下的数复制进来
+	*this = temp;
 }
 
-int CMatrix::Col() const
+void CMatrix::AddCol(double* vec, int aimCol)
 {
-	/********************************
-	*		外部访问列数目的接口
-	********************************/
-	return this->cols;
+	CMatrix temp = this->Trans();
+	temp.AddRow(vec, aimCol);
+	*this = temp.Trans();
 }
+

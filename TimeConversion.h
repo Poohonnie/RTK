@@ -44,13 +44,16 @@ struct GPSTIME
 	}//默认构造函数
 
 	void check();//自检
-	double operator-(const GPSTIME& sub) const;//GPS时减法，仅支持大减小
+	double operator-(const GPSTIME& sub) const;
+	GPSTIME operator-(const double sub) const;
 };
 
 struct BDSTIME : public GPSTIME
 {
 
 };
+
+double SoWSubtraction(double t, double toc);//两个GPS周内秒的减法
 
 double CommonTime2UT(const COMMONTIME&);//通用时转世界时
 

@@ -43,13 +43,20 @@ template<typename T2>
 BLH XYZ2BLH(const XYZ& xyz, const T2& coorSys)
 {
     BLH blh;
+    if (sqrt(xyz.x * xyz.x + xyz.y * xyz.y + xyz.z * xyz.z) < 1e-12)
+    {
+        blh.B = 0;
+        blh.L = 0;
+        blh.H = 0;
+        return blh;
+    }
     double x2 = xyz.x * xyz.x;
     double y2 = xyz.y * xyz.y;
     double z2 = xyz.z * xyz.z;//把各值平方求出来方便后面计算
 
     double deltaZ = 0;//赋初值
     double deltaZ1 = coorSys.eSquare * xyz.z;//deltaZ n+1
-    double sinB = (xyz.z + deltaZ1) / sqrt(x2 + y2 + (xyz.z + deltaZ1) * (xyz.z + deltaZ1));
+    double sinB = ((xyz.z + deltaZ1) + 1e-6) / (1e-6 + sqrt(x2 + y2 + (xyz.z + deltaZ1) * (xyz.z + deltaZ1)));
     double N = coorSys.a / sqrt(1 - coorSys.eSquare * sinB * sinB);
 
     blh.L = atan2(xyz.y, xyz.x);//注意L取值范围，这里要用atan2
