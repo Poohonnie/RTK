@@ -13,7 +13,7 @@
 int main()
 {
 	Client client;
-	client.Run();
+	client.FileSpp();
 
 	return 0;
 }

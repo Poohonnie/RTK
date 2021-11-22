@@ -161,6 +161,7 @@ public:
 
 	unsigned short U2(unsigned char* buf);//读取两个字节
 	unsigned int U4(unsigned char* buf);//读取四个字节
+	float R4(unsigned char* buf);//读取四个字节
 	double R8(unsigned char* buf);//读取八个字节
 
 	//外部接口

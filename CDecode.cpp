@@ -172,13 +172,13 @@ void CDecode::DecodeOem719Obs(unsigned char* buf)
 		this->raw.epkObs.satObs[n].sys = sys;
 
 		this->raw.epkObs.satObs[n].P[freq] = R8(p + 4);
-		this->raw.epkObs.satObs[n].psrSigma[freq] = U4(p + 12);
+		this->raw.epkObs.satObs[n].psrSigma[freq] = R4(p + 12);
 
 		this->raw.epkObs.satObs[n].L[freq] = -wl * R8(p + 16);//要乘-1，不然后面通不过
-		this->raw.epkObs.satObs[n].cpSigma[freq] = U4(p + 24);
+		this->raw.epkObs.satObs[n].cpSigma[freq] = R4(p + 24);
 
-		this->raw.epkObs.satObs[n].D[freq] = wl * U4(p + 28);
-		this->raw.epkObs.satObs[n].cnr = U4(p + 32);
+		this->raw.epkObs.satObs[n].D[freq] = R4(p + 28);
+		this->raw.epkObs.satObs[n].cnr = R4(p + 32);
 		this->raw.epkObs.satObs[n].valid = true;
 	}
 	this->raw.epkObs.t = this->t;//观测数据时间
@@ -296,6 +296,13 @@ unsigned short CDecode::U2(unsigned char* buf)
 unsigned int CDecode::U4(unsigned char* buf)
 {
 	unsigned int val = 0;
+	memcpy(&val, buf, 4);
+	return val;
+}
+
+float CDecode::R4(unsigned char* buf)
+{
+	float val = 0.0;
 	memcpy(&val, buf, 4);
 	return val;
 }

@@ -70,21 +70,21 @@ protected:
 	double eleAngle;//卫星高度角
 	double tropDelay;//对流层延迟
 
-	PARAS paras;//计算中间量
+	//PARAS paras;//计算中间量
 	
 public:
 	friend class SPP;
-	void CalculateParas(const GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem);
-	void CalculateParas(const BDSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem);
+	PARAS CalculateParas(const GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem);
+	PARAS CalculateParas(const BDSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem);
 
 	void CalGps(const GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem);
-	void GpsPosVel(const GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem);//GPS卫星位置计算
+	void GpsPosVel(const GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem, PARAS& gPara);//GPS卫星位置计算
 	void GpsClockBias(const GPSTIME t/*卫星钟表面时*/, double ek, const GPSEPHEM& gpsEphem);//GPS钟差计算
 	void GpsClockRate(const GPSTIME t/*卫星钟表面时*/, double ek, double ekDot, const GPSEPHEM& gpsEphem);//GPS钟速计算
 	bool GpsOod(const GPSTIME t, const GPSEPHEM& gpsEphem);//判断星历过期情况
 
 	void CalBds(const GPSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem);
-	void BdsPosVel(const BDSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem);//BDS卫星位置计算
+	void BdsPosVel(const BDSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem, PARAS& bPara);//BDS卫星位置计算
 	void BdsClockBias(const BDSTIME t/*卫星钟表面时*/, double ek, const BDSEPHEM& bdsEphem);//BDS钟差计算
 	void BdsClockRate(const BDSTIME t/*卫星钟表面时*/, double ek, double ekDot, const BDSEPHEM& bdsEphem);//BDS钟速计算
 	bool BdsOod(const GPSTIME t, const BDSEPHEM& bdsEphem);//判断星历过期情况
@@ -142,7 +142,7 @@ void SatPositioning::Hopefield(const XYZ& rcvrXyz, T1& coor)
 		return ;//测站高度不在对流层范围
 	}
 	double H0 = 0.0;//m 海平面
-	double T0 = 15 + 273.16;//K 温度
+	double T0 = 20.0 + 273.16;//K 温度
 	double p0 = 1013.25;//mbar 气压
 	double RH0 = 0.5;//相对湿度
 
