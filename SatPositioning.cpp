@@ -180,9 +180,8 @@ void SatPositioning::BdsPosVel(const BDSTIME t, const BDSEPHEM& bdsEphem, PARAS&
 
 	CGCS2000 cgcs2000;
 	//BDS MEO/IGSO卫星在BDCS坐标系中的位置和速度计算
-	if (bdsEphem.satId > 5 && bdsEphem.satId < 59)
+	if (!bdsEphem.isGeo())
 	{
-
 		//BDS MEO/IGSO卫星在BDCS坐标系中的位置计算
 		this->satXyz.x = bPara.xy0[0] * cos(bPara.omegak) - bPara.xy0[1] * cos(bPara.ik) * sin(bPara.omegak);
 		this->satXyz.y = bPara.xy0[0] * sin(bPara.omegak) + bPara.xy0[1] * cos(bPara.ik) * cos(bPara.omegak);
@@ -194,7 +193,7 @@ void SatPositioning::BdsPosVel(const BDSTIME t, const BDSEPHEM& bdsEphem, PARAS&
 		this->satV[2] = bPara.ykDot * sin(bPara.ik) + bPara.xy0[1] * sin(bPara.ik) * bPara.ikDot;
 	}
 	//BDS MEO卫星在BDCS坐标系中的位置和速度计算
-	else if ((bdsEphem.satId > 0 && bdsEphem.satId <= 5) || (bdsEphem.satId >= 59 && bdsEphem.satId <= 61))
+	else if (bdsEphem.isGeo())
 	{
 		bPara.omegak = bdsEphem.omega0 + bdsEphem.omegaDot * bPara.tk - cgcs2000.omega * bdsEphem.toe.secOfWeek;
 
@@ -222,7 +221,6 @@ void SatPositioning::BdsPosVel(const BDSTIME t, const BDSEPHEM& bdsEphem, PARAS&
 		xyzMat = Rz * (Rx * XyzGK);
 		memcpy(&this->satXyz, xyzMat.mat, sizeof(XYZ));
 
-
 		//BDS GEO卫星在BDCS坐标系中的速度计算
 		//GEO卫星在自定义坐标系中的速度
 		bPara.omegakDot = bdsEphem.omegaDot;
@@ -237,7 +235,6 @@ void SatPositioning::BdsPosVel(const BDSTIME t, const BDSEPHEM& bdsEphem, PARAS&
 		RzDot.mat[3] = -cos(zRad); RzDot.mat[4] = -sin(zRad); RzDot.mat[5] = 0;
 		RzDot.mat[6] = 0; RzDot.mat[7] = 0; RzDot.mat[8] = 0;
 		RzDot = RzDot * cgcs2000.omega;
-
 
 		//GEO卫星在BDCS坐标系中的速度
 		CMatrix vMat(3, 1);
@@ -260,7 +257,7 @@ void SatPositioning::BdsClockRate(const BDSTIME t, double ek, double ekDot, cons
 	CGCS2000 cgcs2000;//椭球参数
 	double F = -2.0 * sqrt(cgcs2000.GM) / constant::c / constant::c;//相对论效应误差改正
 	double delta_trDot = F * bdsEphem.ecc * bdsEphem.rootA * cos(ek) * ekDot;
-	this->clkRate = bdsEphem.a[1] + 2 * bdsEphem.a[2] * SoWSubtraction(t.secOfWeek, 1e-3 * bdsEphem.toc) + delta_trDot;
+	this->clkRate = bdsEphem.a[1] + 2 * bdsEphem.a[2] * SoWSubtraction(t.secOfWeek, bdsEphem.toc) + delta_trDot;
 }
 
 bool SatPositioning::BdsOod(const GPSTIME t, const  BDSEPHEM& bdsEphem)

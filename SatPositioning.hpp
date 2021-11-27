@@ -4,12 +4,6 @@
 #include "CMatrix.h"
 #include <cmath>
 #include <iostream>
-struct IFCMB
-{
-	double PIF;//相位IF组合，单位周
-	double LIF;//相位IF组合，单位m
-	double phiIF;//伪距IF组合
-};
 
 struct PARAS
 {
@@ -69,8 +63,6 @@ protected:
 	double clkRate;//卫星钟速
 	double eleAngle;//卫星高度角
 	double tropDelay;//对流层延迟
-
-	//PARAS paras;//计算中间量
 	
 public:
 	friend class SPP;
@@ -89,9 +81,8 @@ public:
 	void BdsClockRate(const BDSTIME t/*卫星钟表面时*/, double ek, double ekDot, const BDSEPHEM& bdsEphem);//BDS钟速计算
 	bool BdsOod(const GPSTIME t, const BDSEPHEM& bdsEphem);//判断星历过期情况
 
-
 	template<typename T>
-	void calSatE(const XYZ& rcvr/*接收机地心地固坐标*/, T& coor/*坐标系*/);//卫星高度角和方位角的计算
+	void CalSatE(const XYZ& rcvr/*接收机地心地固坐标*/, T& coor/*坐标系*/);//卫星高度角的计算
 	template<typename T1>
 	void Hopefield(const XYZ& rcvr/*接收机地心地固坐标*/, T1& coor/*坐标系*/);//对流层Hopefield模型改正
 
@@ -102,7 +93,7 @@ public:
 };
 
 template<typename T>
-void SatPositioning::calSatE(const XYZ& rcvrXyz, T& coor)
+void SatPositioning::CalSatE(const XYZ& rcvrXyz, T& coor)
 {
 	//卫星高度角计算
 

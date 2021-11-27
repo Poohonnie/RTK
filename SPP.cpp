@@ -56,6 +56,8 @@ void SPP::ExtendDeltaX(CMatrix& deltaX)
 void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 {
 	WGS84 wgs84;
+	this->t = raw.epkObs.t;
+
 	int usfNum = 0;//可用卫星计数
 	double arrB[MAXCHANNELNUM * 3] = {};//先拿出这么大来，待会再从数组里截取可用的数据下来创建矩阵
 	double arrw[MAXCHANNELNUM * 1] = {};//w矩阵
@@ -108,7 +110,9 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 			if (raw.epkObs.satObs[i].sys == GNSS::GPS && raw.gpsEphem[prn - 1].prn == prn/*该卫星星历存在*/)
 			{
 				//计算信号发射时刻
-				double transT = raw.epkObs.satObs[i].P[0] / constant::c;
+				//double transT = raw.epkObs.satObs[i].P[0] / constant::c;
+				double transT = epkGfmw.gfmw[gi].PIF / constant::c;
+				
 				GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
 				if (!satPos[i].GpsOod(ttr, raw.gpsEphem[prn - 1]))
 					//星历过期
@@ -138,10 +142,10 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				curSttn.x = sttnX.mat[0];
 				curSttn.y = sttnX.mat[1];
 				curSttn.z = sttnX.mat[2];
-				satPos[i].calSatE(curSttn, wgs84);
-
-				if (satPos[i].eleAngle < 10.0 * constant::pi / 180)
-					//高度角低于10度的卫星不参与解算
+				satPos[i].CalSatE(curSttn, wgs84);
+				if (satPos[i].eleAngle < 10.0 * constant::pi / 180 && sqrt(curSttn.x * curSttn.x + curSttn.y * curSttn.y + curSttn.z * curSttn.z) > 1e+4)
+					//xyz数值明显过小时不进行这一步判断，因为BLH会被设为0 0 0,
+					//高度角低于10度的卫星不参与解算 
 					continue;
 
 				//对流层改正
@@ -165,7 +169,8 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 			else if (raw.epkObs.satObs[i].sys == GNSS::BDS && raw.bdsEphem[prn - 1].satId == prn/*该卫星星历存在*/)
 			{
 				//计算信号发射时刻
-				double transT = raw.epkObs.satObs[i].P[0] / constant::c;
+				//double transT = raw.epkObs.satObs[i].P[0] / constant::c;
+				double transT = epkGfmw.gfmw[gi].PIF / constant::c;
 				GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
 				if (!satPos[i].BdsOod(ttr, raw.bdsEphem[prn - 1]))
 					//星历过期
@@ -195,10 +200,10 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				curSttn.x = sttnX.mat[0];
 				curSttn.y = sttnX.mat[1];
 				curSttn.z = sttnX.mat[2];
-				satPos[i].calSatE(curSttn, wgs84);
-
-				if (satPos[i].eleAngle < 10.0 * constant::pi / 180)
-					//高度角低于10度的卫星不参与解算
+				satPos[i].CalSatE(curSttn, wgs84);
+				if (satPos[i].eleAngle < 10.0 * constant::pi / 180 && sqrt(curSttn.x * curSttn.x + curSttn.y * curSttn.y + curSttn.z * curSttn.z) > 1e+4)
+					//xyz数值明显过小时不进行这一步判断，因为BLH会被设为0 0 0,
+					//高度角低于10度的卫星不参与解算 
 					continue;
 
 				//对流层改正
@@ -264,7 +269,6 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 	//数据存储
 	this->sttnClkG = sttnX.mat[3];
 	this->sttnClkB = sttnX.mat[4];
-	this->t = raw.epkObs.t;
 }
 
 void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
@@ -273,12 +277,12 @@ void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 	int usfNum = 0;//可用卫星计数
 	double arrB[MAXCHANNELNUM * 4] = {};//先拿出这么大来，待会再从数组里截取可用的数据下来创建矩阵
 	double arrw[MAXCHANNELNUM * 1] = {};//w矩阵
-
+	double arrP[MAXCHANNELNUM * 1] = {};//各个观测值的权值
 	//测站钟速矩阵
 	CMatrix sttnV(4, 1);
 	sttnV.mat[0] = 0; sttnV.mat[1] = 0; sttnV.mat[2] = 0;
 	sttnV.mat[3] = 0;
-
+	
 	for (int i = 0; i < raw.epkObs.satNum; i++)
 	{
 		int prn = raw.epkObs.satObs[i].prn;
@@ -305,10 +309,10 @@ void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 		double range = sqrt(fabs(lx * lx + ly * ly + lz * lz));
 		double rhoDot = (lx * this->satPos[i].satV[0] + ly * this->satPos[i].satV[1] + lz * this->satPos[i].satV[2]) / range;
 
-		arrB[usfNum * 3 + 0] = lx / range;
-		arrB[usfNum * 3 + 1] = ly / range;
-		arrB[usfNum * 3 + 2] = lz / range;
-		arrB[usfNum * 3 + 3] = 1;
+		arrB[usfNum * 4 + 0] = lx / range;
+		arrB[usfNum * 4 + 1] = ly / range;
+		arrB[usfNum * 4 + 2] = lz / range;
+		arrB[usfNum * 4 + 3] = 1;
 
 		if (raw.epkObs.satObs[i].sys == GNSS::GPS && raw.gpsEphem[prn - 1].prn == prn/*该卫星星历存在*/)
 		{
@@ -322,11 +326,12 @@ void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 			//w矩阵赋值
 			arrw[usfNum] = -lambda1 * raw.epkObs.satObs[i].D[0] + constant::c * this->satPos[i].clkRate - rhoDot;
 		}
+
 		usfNum++;
 	}
 	if (usfNum < 5)//卫星数目过少，不进行定位解算
 		return;
-	CMatrix B(arrB, usfNum, 4);//B矩阵(未根据钟差系数进行扩展)
+	CMatrix B(arrB, usfNum, 4);//B矩阵
 	CMatrix w(arrw, usfNum, 1);
 	CMatrix BT = B.Trans();
 	CMatrix BTB(4, 4);//BT * B
@@ -354,11 +359,26 @@ void SPP::check()
 	double y = this->sttnXyz.y;
 	double z = this->sttnXyz.z;
 
-	//XYZ xyz0 = { -2267798.6013, 5009344.4598, 3220981.8681 };
-	XYZ xyz0 = { 0.0, 0.0, 0.0 };
-	if (fabs(sttnBlh.H) > 1e+2 )
+	XYZ xyz0 = { -2267794.9370, 5009345.2360, 3220980.3120 };
+	//XYZ xyz0 = { 0.0, 0.0, 0.0 };
+	if (fabs(sttnBlh.H) > 1e+4 )
 	{
 		memset(this, 0, sizeof(SPP));
 	}
 
+}
+
+void SPP::CalDNEU()
+{
+	WGS84 wgs84;
+	XYZ refXyz = { -2267794.9370, 5009345.2360, 3220980.3120 };
+	BLH refBlh = XYZ2BLH(refXyz, wgs84);
+	double dXyz[3] = {};
+	dXyz[0] = this->sttnXyz.x - refXyz.x;
+	dXyz[1] = this->sttnXyz.y - refXyz.y;
+	dXyz[2] = this->sttnXyz.z - refXyz.z;
+
+	this->dN = -sin(refBlh.B) * cos(refBlh.L) * dXyz[0] - sin(refBlh.B) * sin(refBlh.L) * dXyz[1] + cos(refBlh.B) * dXyz[2];
+	this->dE = -sin(refBlh.L) * dXyz[0] + cos(refBlh.L) * dXyz[1];
+	this->dU = cos(refBlh.B) * cos(refBlh.L) * dXyz[0] + cos(refBlh.B) * sin(refBlh.L) * dXyz[1] + sin(refBlh.B) * dXyz[2];
 }

@@ -50,7 +50,6 @@ struct GPSTIME
 
 struct BDSTIME : public GPSTIME
 {
-
 };
 
 double SoWSubtraction(double t, double toc);//两个GPS周内秒的减法

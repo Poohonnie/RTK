@@ -25,7 +25,7 @@ int EPKOBS::FindSatObsIndex(const int prn, const GNSS sys)
 
 bool BDSEPHEM::isGeo() const
 {
-	if (this->satId <= 5 || this->satId == 59)
+	if ((this->satId > 0 && this->satId <= 5 )|| (this->satId >= 59 && this->satId <= 61))
 		return true;
 	else
 		return false;
@@ -349,9 +349,8 @@ int CSocketDecode::DecodeOem719Msg(unsigned char* buf, int curLen, int& lenRem)
 			{
 				break;   //找到跳出，进行后面的读取。
 			}
-			//否则循环找到AA4412为止
+			//否则循环找到AA4412为止 178 68 18
 		}
-
 		if (i + 28 <= len)
 		{
 			//说明此段报文剩下的内容大小大于等于一个头文件

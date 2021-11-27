@@ -8,8 +8,8 @@ class Client
 private:
 
 public:
-	void Run();
-	void FileSpp();
+	int Run();
+	int FileSpp();
 
 };
 

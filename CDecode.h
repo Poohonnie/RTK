@@ -189,12 +189,12 @@ class CSocketDecode : public CDecode
 protected:
 
 public:
-	int DecodeOem719Msg(unsigned char* buf, int curRem, int& lastRem);//文件解码
+	int DecodeOem719Msg(unsigned char* buf, int curRem, int& lastRem);//解码
 
 
 
-	bool OpenSocket(SOCKET& sock, const char IP[], const unsigned short Port);//打开串口
-	void CloseSocket(SOCKET& sock);//关闭串口
+	bool OpenSocket(SOCKET& sock, const char IP[], const unsigned short Port);//打开套接字
+	void CloseSocket(SOCKET& sock);//关闭套接字
 
 	CSocketDecode()
 	{

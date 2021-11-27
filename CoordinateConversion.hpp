@@ -17,6 +17,8 @@ struct BLH
 	double B;//纬度 单位为弧度rad
 	double H;//高度 单位为米
 };
+
+
 template<typename T1>
 XYZ BLH2XYZ(const BLH&, const T1&);
 
@@ -43,7 +45,7 @@ template<typename T2>
 BLH XYZ2BLH(const XYZ& xyz, const T2& coorSys)
 {
     BLH blh;
-    if (sqrt(xyz.x * xyz.x + xyz.y * xyz.y + xyz.z * xyz.z) < 1e-12)
+    if (sqrt(xyz.x * xyz.x + xyz.y * xyz.y + xyz.z * xyz.z) < 1e+4)
     {
         blh.B = 0;
         blh.L = 0;
