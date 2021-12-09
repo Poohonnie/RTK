@@ -25,13 +25,13 @@ XYZ BLH2XYZ(const BLH&, const T1&);
 template<typename T2>
 BLH XYZ2BLH(const XYZ&, const T2&);
 
-double Deg2Rad(const double deg, const double min, const double sec);
+double Deg2Rad(double deg, double min, double sec);
 
 
 template<typename T1>
 XYZ BLH2XYZ(const BLH& blh, const T1& coorSys)
 {
-    XYZ xyz;
+    XYZ xyz{};
     double N = coorSys.a / sqrt(1 - coorSys.eSquare * sin(blh.B) * sin(blh.B));//Ã®ÓÏÈ¦ÇúÂÊ°ë¾¶
     //PPT 1-4 20Ò³ ¹«Ê½
     xyz.x = (N + blh.H) * cos(blh.B) * cos(blh.L);
@@ -44,7 +44,7 @@ XYZ BLH2XYZ(const BLH& blh, const T1& coorSys)
 template<typename T2>
 BLH XYZ2BLH(const XYZ& xyz, const T2& coorSys)
 {
-    BLH blh;
+    BLH blh{};
     if (sqrt(xyz.x * xyz.x + xyz.y * xyz.y + xyz.z * xyz.z) < 1e+4)
     {
         blh.B = 0;

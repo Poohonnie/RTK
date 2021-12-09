@@ -1,5 +1,6 @@
 #include "TimeConversion.h"
 #include <cmath>
+
 double SoWSubtraction(double t, double toc)
 {
 	double result = t - toc;
@@ -46,21 +47,21 @@ COMMONTIME MjdTime2CommonTime(const MJDTIME& mjdTime)
 	COMMONTIME commonTime;//作为返回值
 	int a, b, c, d, e;//转换中间参数，见PPT 1-4 第 10 页
 	double JD = mjdTime.day + mjdTime.fracDay + 2400000.5;
-	a = int(JD + 0.5); b = a + 1537;
+	a = lround(JD + 0.5); b = a + 1537;
 	c = int((b - 122.1) / 365.25);
 	d = int(365.25 * c);
 	e = int((b - d) / 30.6001);
-	double D = b - d - int(30.6001 * e) + JD + 0.5 - int(JD + 0.5);//中间参数一年中的日，单位天
+	double D = b - d - int(30.6001 * e) + JD + 0.5 - lround(JD + 0.5);//中间参数一年中的日，单位天
 	int M = e - 1 - 12 * int(e / 14);//月
 	int Y = c - 4715 - int((M + 7) / 10);//年
 
-	commonTime.day = unsigned short(D);//D取整
+	commonTime.day = (unsigned short)D;//D取整
 
-	commonTime.hour = unsigned short(mjdTime.secOfDay / 3600.0);//秒数除以3600再取整，得小时数
-	commonTime.minute = unsigned short((mjdTime.secOfDay - commonTime.hour * 3600.0) / 60.0);//一小时内剩余秒数除以60取整，得分钟数
+	commonTime.hour = (unsigned short)(mjdTime.secOfDay / 3600.0);//秒数除以3600再取整，得小时数
+	commonTime.minute = (unsigned short)((mjdTime.secOfDay - commonTime.hour * 3600.0) / 60.0);//一小时内剩余秒数除以60取整，得分钟数
 	commonTime.second = mjdTime.secOfDay - commonTime.hour * 3600.0 - commonTime.minute * 60.0;//秒数
 
-	commonTime.month = unsigned char(M);
+	commonTime.month = (unsigned char)M;
 	commonTime.year = short(Y);
 
 	return commonTime;
@@ -70,7 +71,7 @@ GPSTIME MjdTime2GpsTime(const MJDTIME& mjdTime)
 {
 	//简化儒略日转GPS时
 	GPSTIME gpsTime;
-	gpsTime.week = unsigned short((mjdTime.day - 44244) / 7);
+	gpsTime.week = (unsigned short)((mjdTime.day - 44244) / 7);
 	gpsTime.secOfWeek = int(mjdTime.day - 44244 - int((mjdTime.day - 44244) / 7) * 7)/*这是算出GPS周内天数的整数部分*/ * 86400 + mjdTime.secOfDay;
 	return gpsTime;
 }
@@ -168,7 +169,6 @@ void GPSTIME::check()
 		this->secOfWeek -= 604800.0;
 		this->week++;
 	}
-	return;
 }
 
 double GPSTIME::operator-(const GPSTIME& sub) const

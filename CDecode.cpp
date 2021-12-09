@@ -6,19 +6,12 @@ void SATOBS::check()
 		this->valid = false;
 }
 
-void CDecode::Reset()
-{
-	memset(this, 0, sizeof(CDecode));
-}
-
 int EPKOBS::FindSatObsIndex(const int prn, const GNSS sys)
 {
 	for (int i = 0; i < MAXCHANNELNUM; i++)
 	{
-		if (this->satObs[i].prn == prn && this->satObs[i].sys == sys)
-			return i;//返回所找到的satObs数组下标
-		else if (this->satObs[i].prn == 0)
-			return i;//返回空satObs下标
+		if ((this->satObs[i].prn == prn && this->satObs[i].sys == sys) || this->satObs[i].prn == 0)
+			return i;//返回所找到的satObs数组下标 或 返回空satObs下标
 	}
 	return 114514;
 }
@@ -29,7 +22,6 @@ bool BDSEPHEM::isGeo() const
 		return true;
 	else
 		return false;
-	return false;
 }
 
 int CFileDecode::DecodeOem719Msg(FILE* fp)
@@ -38,10 +30,10 @@ int CFileDecode::DecodeOem719Msg(FILE* fp)
 	memset(buf, 0, 10240);//初始化
 	int msgId, lenth;
 
-	while (1)
+	while (true)
 	{
 		//找起始标记 AA 44 12
-		while (1)//打破条件在循环块内部
+		while (true)//打破条件在循环块内部
 		{
 			if (fread(buf + 2, sizeof(unsigned char), 1, fp) < 1)
 				return -114514;
@@ -103,7 +95,6 @@ int CFileDecode::DecodeOem719Msg(FILE* fp)
 			break;
 		}
 	}
-	return 0;
 }
 
 void CDecode::DecodeOem719Obs(unsigned char* buf)
@@ -126,7 +117,7 @@ void CDecode::DecodeOem719Obs(unsigned char* buf)
 	{
 		prn = U2(p);
 		chTrStatus = U4(p + 40);
-		int lockedFlag = 1;
+		int lockedFlag{};
 		lockedFlag = chTrStatus >> 12 & 0x01;
 		if (lockedFlag == 0)
 			continue;//这个历元的数据未被锁定，不可靠，直接跳过
@@ -323,7 +314,7 @@ FILE* CFileDecode::FileRead(const char* fileName)
 {
 	FILE* fp;
 	fopen_s(&fp, fileName, "rb");
-	if (fp == NULL)
+	if (fp == nullptr)
 	{
 		printf("Cannot open OEM719 file. \n");
 		std::abort();
@@ -341,7 +332,7 @@ int CSocketDecode::DecodeOem719Msg(unsigned char* buf, int curLen, int& lenRem)
 	unsigned char Buff[10240];//单个消息缓冲区
 	int msgId, msgLen;
 
-	while (1)
+	while (true)
 	{
 		for (; i < len - 3; i++)
 		{

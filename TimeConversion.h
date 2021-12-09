@@ -45,7 +45,7 @@ struct GPSTIME
 
 	void check();//вт╪Л
 	double operator-(const GPSTIME& sub) const;
-	GPSTIME operator-(const double sub) const;
+	GPSTIME operator-(double sub) const;
 };
 
 struct BDSTIME : public GPSTIME

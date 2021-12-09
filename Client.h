@@ -9,7 +9,7 @@ private:
 
 public:
 	int Run();
-	int FileSpp();
+	static int FileSpp();
 
 };
 

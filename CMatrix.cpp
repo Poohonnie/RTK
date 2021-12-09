@@ -1,17 +1,16 @@
 ﻿#include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 #include <iomanip>
+#include <cmath>
 #include "CMatrix.h"
 
 CMatrix::CMatrix() :
 	mat(nullptr), 
 	rows(0), 
-	cols(0) 
-{
+	cols(0)
+{};//默认构造函数
 
-};//默认构造函数
-
-CMatrix::CMatrix(double* Mat, int Rows, int Cols)
+CMatrix::CMatrix(const double* arr, int Rows, int Cols)
 {
 
 	if (Rows && Cols)
@@ -20,7 +19,7 @@ CMatrix::CMatrix(double* Mat, int Rows, int Cols)
 		this->mat = new double[Rows * Cols];
 		for (int i = 0; i < Rows * Cols; i++)
 		{
-			this->mat[i] = Mat[i];
+			this->mat[i] = arr[i];
 		}
 	}
 	else
@@ -66,8 +65,7 @@ CMatrix::CMatrix(const CMatrix& orig)
 
 CMatrix::~CMatrix()
 {
-	if (this->mat != nullptr)
-		delete[] this->mat;
+	delete[] this->mat;
 }
 
 CMatrix CMatrix::Eye(int n)
@@ -81,11 +79,13 @@ CMatrix CMatrix::Eye(int n)
 	}
 	else
 	{
-		return Eye(1);
+        double arr[1] = {0};
+        CMatrix matrix(arr, 1, 1);
+        return matrix;
 	}
 }
 
-void CMatrix::Show()
+void CMatrix::Show() const
 {
 	for (int i = 0; i < this->rows; i++)
 	{
@@ -97,7 +97,7 @@ void CMatrix::Show()
 	}
 }
 
-void CMatrix::Show(int m, int n)
+void CMatrix::Show(int m, int n) const
 {
 	for (int i = 0; i < this->rows; i++)
 	{
@@ -110,7 +110,7 @@ void CMatrix::Show(int m, int n)
 	}
 }
 
-void CMatrix::Write(double val, int m, int n)
+void CMatrix::Write(double val, int m, int n) const
 {
 	if (m <= this->rows && n <= this->cols && this->mat)
 	{
@@ -124,7 +124,7 @@ void CMatrix::Write(double val, int m, int n)
 	}
 }
 
-double CMatrix::Read(int m, int n)
+double CMatrix::Read(int m, int n) const
 {
 	if (m <= this->rows && n <= this->cols)
 		return this->mat[m * this->cols + n];
@@ -132,7 +132,7 @@ double CMatrix::Read(int m, int n)
 		return -114.514;
 }
 
-bool CMatrix::isSquare()
+bool CMatrix::isSquare() const
 {
 	if (this->mat != nullptr)
 	{
@@ -146,7 +146,7 @@ bool CMatrix::isSquare()
 		return false;
 }
 
-void CMatrix::check()
+void CMatrix::check() const
 {
 	for (int i = 0; i < this->cols * this->rows; i++)
 	{
@@ -303,7 +303,7 @@ CMatrix CMatrix::Inv()
 			}
 		}
 
-		if (abs(d) < 1.0E-15)
+		if (fabs(d) < 1.0E-15)
 		{
 			return Eye(n);
 		}
@@ -397,13 +397,13 @@ CMatrix CMatrix::Inv()
 
 	for (int count = 0; count < n * n; count++)
 	{
-		if (abs(invMat.mat[count]) < 1.0e-16)
+		if (fabs(invMat.mat[count]) < 1.0e-16)
 			invMat.mat[count] = 0;
 	}
 	return invMat;
 }
 
-CMatrix CMatrix::Trans()
+CMatrix CMatrix::Trans() const
 {
 	/***********************
 	*		矩阵转置

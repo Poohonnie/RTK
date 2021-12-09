@@ -1,9 +1,9 @@
 #include "SPP.h"
 
-void SPP::ExtendMatB(CMatrix& B, int total)
+void SPP::ExtendMatB(CMatrix& B, int total) const
 {
-	double* gB = new double[total];
-	double* bB = new double[total];
+	auto* gB = new double[total];
+	auto* bB = new double[total];
 	//赋初值
 	memset(gB, 0, 8 * total);
 	memset(bB, 0, 8 * total);
@@ -31,7 +31,7 @@ void SPP::ExtendMatB(CMatrix& B, int total)
 	delete[] bB;
 }
 
-void SPP::ExtendDeltaX(CMatrix& deltaX)
+void SPP::ExtendDeltaX(CMatrix& deltaX) const
 {
 	if (!this->gNum)
 	{
@@ -58,7 +58,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 	WGS84 wgs84;
 	this->t = raw.epkObs.t;
 
-	int usfNum = 0;//可用卫星计数
+	int usfNum{};//可用卫星计数
 	double arrB[MAXCHANNELNUM * 3] = {};//先拿出这么大来，待会再从数组里截取可用的数据下来创建矩阵
 	double arrw[MAXCHANNELNUM * 1] = {};//w矩阵
 
@@ -114,7 +114,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				double transT = epkGfmw.gfmw[gi].PIF / constant::c;
 				
 				GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
-				if (!satPos[i].GpsOod(ttr, raw.gpsEphem[prn - 1]))
+				if (!SatPositioning::GpsOod(ttr, raw.gpsEphem[prn - 1]))
 					//星历过期
 					continue;
 				for (int k = 0; k < 4; k++)
@@ -126,7 +126,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				double deltat1 = raw.epkObs.t - ttr - sttnClkG / constant::c;
 				
 				//地球自转改正前的卫星位置
-				XYZ satXyzk;
+				XYZ satXyzk{};
 				satXyzk.x = satPos[i].satXyz.x;
 				satXyzk.y = satPos[i].satXyz.y;
 				satXyzk.z = satPos[i].satXyz.z;
@@ -138,7 +138,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				satPos[i].satXyz.z = satXyzk.z;
 
 				//卫星高度角计算
-				XYZ curSttn;
+				XYZ curSttn{};
 				curSttn.x = sttnX.mat[0];
 				curSttn.y = sttnX.mat[1];
 				curSttn.z = sttnX.mat[2];
@@ -172,7 +172,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				//double transT = raw.epkObs.satObs[i].P[0] / constant::c;
 				double transT = epkGfmw.gfmw[gi].PIF / constant::c;
 				GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
-				if (!satPos[i].BdsOod(ttr, raw.bdsEphem[prn - 1]))
+				if (!SatPositioning::BdsOod(ttr, raw.bdsEphem[prn - 1]))
 					//星历过期
 					continue;
 				for (int k = 0; k < 4; k++)
@@ -184,7 +184,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				double deltat1 = raw.epkObs.t - ttr - sttnClkB / constant::c;
 
 				//地球自转改正前的卫星位置
-				XYZ satXyzk;
+				XYZ satXyzk{};
 				satXyzk.x = satPos[i].satXyz.x;
 				satXyzk.y = satPos[i].satXyz.y;
 				satXyzk.z = satPos[i].satXyz.z;
@@ -196,7 +196,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				satPos[i].satXyz.z = satXyzk.z;
 
 				//卫星高度角计算
-				XYZ curSttn;
+				XYZ curSttn{};
 				curSttn.x = sttnX.mat[0];
 				curSttn.y = sttnX.mat[1];
 				curSttn.z = sttnX.mat[2];
@@ -273,15 +273,13 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 
 void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 {
-	WGS84 wgs84;
 	int usfNum = 0;//可用卫星计数
 	double arrB[MAXCHANNELNUM * 4] = {};//先拿出这么大来，待会再从数组里截取可用的数据下来创建矩阵
 	double arrw[MAXCHANNELNUM * 1] = {};//w矩阵
-	double arrP[MAXCHANNELNUM * 1] = {};//各个观测值的权值
 	//测站钟速矩阵
-	CMatrix sttnV(4, 1);
-	sttnV.mat[0] = 0; sttnV.mat[1] = 0; sttnV.mat[2] = 0;
-	sttnV.mat[3] = 0;
+	CMatrix sttnv(4, 1);
+    sttnv.mat[0] = 0; sttnv.mat[1] = 0; sttnv.mat[2] = 0;
+    sttnv.mat[3] = 0;
 	
 	for (int i = 0; i < raw.epkObs.satNum; i++)
 	{
@@ -338,16 +336,16 @@ void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 	CMatrix BTw(4, 1);//BT * w
 	BTB = BT * B;
 	BTw = BT * w;
-	sttnV = BTB.Inv() * BTw;//得到最小二乘解
+    sttnv = BTB.Inv() * BTw;//得到最小二乘解
 
 	//最终测速结果
-	this->sttnV[0] = sttnV.mat[0];
-	this->sttnV[1] = sttnV.mat[1];
-	this->sttnV[2] = sttnV.mat[2];
+	this->sttnV[0] = sttnv.mat[0];
+	this->sttnV[1] = sttnv.mat[1];
+	this->sttnV[2] = sttnv.mat[2];
 
 	//进行精度评定
 	CMatrix V(usfNum, 1);
-	V = B * sttnV - w;
+	V = B * sttnv - w;
 	CMatrix VTV(1, 1);
 	VTV = V.Trans() * V;
 	this->sigmaV = sqrt(VTV.mat[0] / (usfNum - 4.0));
@@ -355,17 +353,10 @@ void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 
 void SPP::check()
 {
-	double x = this->sttnXyz.x;
-	double y = this->sttnXyz.y;
-	double z = this->sttnXyz.z;
-
-	XYZ xyz0 = { -2267794.9370, 5009345.2360, 3220980.3120 };
-	//XYZ xyz0 = { 0.0, 0.0, 0.0 };
 	if (fabs(sttnBlh.H) > 1e+4 )
 	{
 		memset(this, 0, sizeof(SPP));
 	}
-
 }
 
 void SPP::CalDNEU()

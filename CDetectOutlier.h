@@ -18,14 +18,14 @@ struct GFMW
 struct EPKGFMW
 {
 	GFMW gfmw[MAXCHANNELNUM];//单个历元所有GFMW组合观测值
-	int FindSatObsIndex(const int prn, const GNSS sys);//搜索某个prn号的卫星在epkGfmw中的下标
+	int FindSatObsIndex(int prn, GNSS sys);//搜索某个prn号的卫星在epkGfmw中的下标
 };
 
 class CDetectOutlier
 {
 private:
-	EPKGFMW lastEpk;//上一历元GF和MW组合
-	EPKGFMW curEpk;//当前历元GF和MW组合
+	EPKGFMW lastEpk{};//上一历元GF和MW组合
+	EPKGFMW curEpk{};//当前历元GF和MW组合
 
 public:
 	friend class Client;
