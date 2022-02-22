@@ -2,8 +2,8 @@
 
 void SPP::ExtendMatB(CMatrix& B, int total) const
 {
-	auto* gB = new double[total];
-	auto* bB = new double[total];
+	auto* gB = new double[total];//GPS
+	auto* bB = new double[total];//BDS
 	//赋初值
 	memset(gB, 0, 8 * total);
 	memset(bB, 0, 8 * total);
@@ -47,6 +47,7 @@ void SPP::ExtendDeltaX(CMatrix& deltaX) const
 	}
 	else if (!this->bNum)
 	{
+        //GPS卫星数不为0
 		//如果BDS卫星数为0，那么钟差与上一历元变化值为0，扩展进deltaX矩阵里
 		double clkB[1] = { 0.0 };
 		deltaX.AddRow(clkB, 4);
@@ -58,7 +59,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 	WGS84 wgs84;
 	this->t = raw.epkObs.t;
 
-	int usfNum{};//可用卫星计数
+	int usfNum;//可用卫星计数
 	double arrB[MAXCHANNELNUM * 3] = {};//先拿出这么大来，待会再从数组里截取可用的数据下来创建矩阵
 	double arrw[MAXCHANNELNUM * 1] = {};//w矩阵
 
@@ -270,6 +271,11 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 	this->sttnClkG = sttnX.mat[3];
 	this->sttnClkB = sttnX.mat[4];
 }
+
+
+
+
+
 
 void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 {

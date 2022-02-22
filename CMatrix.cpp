@@ -129,7 +129,7 @@ double CMatrix::Read(int m, int n) const
 	if (m <= this->rows && n <= this->cols)
 		return this->mat[m * this->cols + n];
 	else
-		return -114.514;
+		return -114514.0;
 }
 
 bool CMatrix::isSquare() const

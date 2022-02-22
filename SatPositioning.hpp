@@ -1,8 +1,7 @@
 #pragma once
-#include "Constant.h"
+#include "lib.h"
 #include "CDecode.h"
 #include "CMatrix.h"
-#include <cmath>
 #include <iostream>
 
 struct PARAS

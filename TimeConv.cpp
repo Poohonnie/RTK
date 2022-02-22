@@ -1,5 +1,4 @@
-#include "TimeConversion.h"
-#include <cmath>
+#include "lib.h"
 
 double SoWSubtraction(double t, double toc)
 {
@@ -21,7 +20,7 @@ double CommonTime2UT(const COMMONTIME& commonTime)
 MJDTIME CommonTime2MjdTime(const COMMONTIME& commonTime)
 {
 	//通用时转简化儒略日
-	MJDTIME mjdTime;
+	MJDTIME mjdTime{};
 	int y;//年
 	int m;//月
 	if (commonTime.month <= 2)
@@ -44,7 +43,7 @@ MJDTIME CommonTime2MjdTime(const COMMONTIME& commonTime)
 COMMONTIME MjdTime2CommonTime(const MJDTIME& mjdTime)
 {
 	//简化儒略日转通用时
-	COMMONTIME commonTime;//作为返回值
+	COMMONTIME commonTime{};//作为返回值
 	int a, b, c, d, e;//转换中间参数，见PPT 1-4 第 10 页
 	double JD = mjdTime.day + mjdTime.fracDay + 2400000.5;
 	a = lround(JD + 0.5); b = a + 1537;
@@ -70,7 +69,7 @@ COMMONTIME MjdTime2CommonTime(const MJDTIME& mjdTime)
 GPSTIME MjdTime2GpsTime(const MJDTIME& mjdTime)
 {
 	//简化儒略日转GPS时
-	GPSTIME gpsTime;
+	GPSTIME gpsTime{};
 	gpsTime.week = (unsigned short)((mjdTime.day - 44244) / 7);
 	gpsTime.secOfWeek = int(mjdTime.day - 44244 - int((mjdTime.day - 44244) / 7) * 7)/*这是算出GPS周内天数的整数部分*/ * 86400 + mjdTime.secOfDay;
 	return gpsTime;
@@ -79,7 +78,7 @@ GPSTIME MjdTime2GpsTime(const MJDTIME& mjdTime)
 MJDTIME GpsTime2MjdTime(const GPSTIME& gpsTime)
 {
 	//GPS时转简化儒略日
-	MJDTIME mjdTime;
+	MJDTIME mjdTime{};
 	mjdTime.day = 44244 + gpsTime.week * 7 + int(gpsTime.secOfWeek / 86400);
 	mjdTime.fracDay = fmod(gpsTime.secOfWeek, 86400.0) / 86400.0;
 	/*gpsTime.secOfWeek / 86400 - int(gpsTime.secOfWeek / 86400); 可用上面代码替换*/
@@ -106,7 +105,7 @@ COMMONTIME GpsTime2CommonTime(const GPSTIME& gpsTime)
 BDSTIME GpsTime2BdsTime(const GPSTIME& gpsTime)
 {
 	//GPS时 转 北斗时
-	BDSTIME bdsTime;
+	BDSTIME bdsTime{};
 	bdsTime.week = gpsTime.week - 1356;
 	bdsTime.secOfWeek = gpsTime.secOfWeek - 14.0;
 	bdsTime.check();
@@ -116,7 +115,7 @@ BDSTIME GpsTime2BdsTime(const GPSTIME& gpsTime)
 GPSTIME BdsTime2GpsTime(const BDSTIME& bdsTime)
 {
 	//北斗时 转 GPS时
-	GPSTIME gpsTime;
+	GPSTIME gpsTime{};
 	gpsTime.week = bdsTime.week + 1356;
 	gpsTime.secOfWeek = bdsTime.secOfWeek + 14.0;
 	gpsTime.check();
@@ -173,14 +172,14 @@ void GPSTIME::check()
 
 double GPSTIME::operator-(const GPSTIME& sub) const
 {
-	double result = -114.514;
+	double result{};
 	result = SoWSubtraction(this->week * 604800.0 + this->secOfWeek, sub.week * 604800.0 + sub.secOfWeek);
 	return result;
 }
 
 GPSTIME GPSTIME::operator-(const double sub) const
 {
-	GPSTIME result;
+	GPSTIME result{};
 	if (this->secOfWeek - sub < 0)
 	{
 		result.secOfWeek = this->secOfWeek - sub + 604800.0;

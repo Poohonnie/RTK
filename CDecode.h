@@ -2,9 +2,7 @@
 #pragma comment(lib, "ws2_32")
 #pragma warning(disable:4996)
 
-#include "TimeConversion.h"
-#include "CoordinateConversion.hpp"
-#include "Constant.h"
+#include "lib.h"
 #include <fstream>
 #include <winsock2.h>
 
@@ -48,6 +46,15 @@ struct EPKOBS
 	}
 	int FindSatObsIndex(int prn, GNSS sys);//搜索某个prn号的卫星在epkObs中的下标
 };
+
+struct EPHEMERIS
+{
+    GNSS sys;
+    unsigned short prn{};//卫星编号
+    
+};
+
+
 
 struct GPSEPHEM
 {

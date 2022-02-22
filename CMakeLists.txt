@@ -7,9 +7,9 @@ include_directories(include)
 add_executable(SPP
         main.cpp
         CMatrix.h   CMatrix.cpp
-        Constant.h  Constant.cpp
-        TimeConversion.h    TimeConversion.cpp
-        CoordinateConversion.hpp    CoordinateConversion.cpp
+        lib.h
+        TimeConv.cpp
+        CoorConv.cpp
         CDecode.h   CDecode.cpp
         SatPositioning.hpp  SatPositioning.cpp
         CDetectOutlier.h    CDetectOutlier.cpp
