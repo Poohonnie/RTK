@@ -63,22 +63,15 @@ build CMakeFiles/SPP.dir/CMatrix.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing
   OBJECT_DIR = CMakeFiles\SPP.dir
   OBJECT_FILE_DIR = CMakeFiles\SPP.dir
 
-build CMakeFiles/SPP.dir/Constant.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing/CLionProjects/SPP/Constant.cpp || cmake_object_order_depends_target_SPP
-  DEP_FILE = CMakeFiles\SPP.dir\Constant.cpp.obj.d
+build CMakeFiles/SPP.dir/TimeConv.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing/CLionProjects/SPP/TimeConv.cpp || cmake_object_order_depends_target_SPP
+  DEP_FILE = CMakeFiles\SPP.dir\TimeConv.cpp.obj.d
   FLAGS = -g -std=gnu++14
   INCLUDES = -IC:/Users/Zing/CLionProjects/SPP/include
   OBJECT_DIR = CMakeFiles\SPP.dir
   OBJECT_FILE_DIR = CMakeFiles\SPP.dir
 
-build CMakeFiles/SPP.dir/TimeConversion.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing/CLionProjects/SPP/TimeConversion.cpp || cmake_object_order_depends_target_SPP
-  DEP_FILE = CMakeFiles\SPP.dir\TimeConversion.cpp.obj.d
-  FLAGS = -g -std=gnu++14
-  INCLUDES = -IC:/Users/Zing/CLionProjects/SPP/include
-  OBJECT_DIR = CMakeFiles\SPP.dir
-  OBJECT_FILE_DIR = CMakeFiles\SPP.dir
-
-build CMakeFiles/SPP.dir/CoordinateConversion.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing/CLionProjects/SPP/CoordinateConversion.cpp || cmake_object_order_depends_target_SPP
-  DEP_FILE = CMakeFiles\SPP.dir\CoordinateConversion.cpp.obj.d
+build CMakeFiles/SPP.dir/CoorConv.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing/CLionProjects/SPP/CoorConv.cpp || cmake_object_order_depends_target_SPP
+  DEP_FILE = CMakeFiles\SPP.dir\CoorConv.cpp.obj.d
   FLAGS = -g -std=gnu++14
   INCLUDES = -IC:/Users/Zing/CLionProjects/SPP/include
   OBJECT_DIR = CMakeFiles\SPP.dir
@@ -91,8 +84,8 @@ build CMakeFiles/SPP.dir/CDecode.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing
   OBJECT_DIR = CMakeFiles\SPP.dir
   OBJECT_FILE_DIR = CMakeFiles\SPP.dir
 
-build CMakeFiles/SPP.dir/SatPositioning.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing/CLionProjects/SPP/SatPositioning.cpp || cmake_object_order_depends_target_SPP
-  DEP_FILE = CMakeFiles\SPP.dir\SatPositioning.cpp.obj.d
+build CMakeFiles/SPP.dir/SatPos.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing/CLionProjects/SPP/SatPos.cpp || cmake_object_order_depends_target_SPP
+  DEP_FILE = CMakeFiles\SPP.dir\SatPos.cpp.obj.d
   FLAGS = -g -std=gnu++14
   INCLUDES = -IC:/Users/Zing/CLionProjects/SPP/include
   OBJECT_DIR = CMakeFiles\SPP.dir
@@ -127,7 +120,7 @@ build CMakeFiles/SPP.dir/Client.cpp.obj: CXX_COMPILER__SPP_Debug C$:/Users/Zing/
 #############################################
 # Link the executable SPP.exe
 
-build SPP.exe: CXX_EXECUTABLE_LINKER__SPP_Debug CMakeFiles/SPP.dir/main.cpp.obj CMakeFiles/SPP.dir/CMatrix.cpp.obj CMakeFiles/SPP.dir/Constant.cpp.obj CMakeFiles/SPP.dir/TimeConversion.cpp.obj CMakeFiles/SPP.dir/CoordinateConversion.cpp.obj CMakeFiles/SPP.dir/CDecode.cpp.obj CMakeFiles/SPP.dir/SatPositioning.cpp.obj CMakeFiles/SPP.dir/CDetectOutlier.cpp.obj CMakeFiles/SPP.dir/SPP.cpp.obj CMakeFiles/SPP.dir/Client.cpp.obj
+build SPP.exe: CXX_EXECUTABLE_LINKER__SPP_Debug CMakeFiles/SPP.dir/main.cpp.obj CMakeFiles/SPP.dir/CMatrix.cpp.obj CMakeFiles/SPP.dir/TimeConv.cpp.obj CMakeFiles/SPP.dir/CoorConv.cpp.obj CMakeFiles/SPP.dir/CDecode.cpp.obj CMakeFiles/SPP.dir/SatPos.cpp.obj CMakeFiles/SPP.dir/CDetectOutlier.cpp.obj CMakeFiles/SPP.dir/SPP.cpp.obj CMakeFiles/SPP.dir/Client.cpp.obj
   FLAGS = -g
   LINK_LIBRARIES = -lws2_32  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\SPP.dir

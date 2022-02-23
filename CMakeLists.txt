@@ -11,7 +11,7 @@ add_executable(SPP
         TimeConv.cpp
         CoorConv.cpp
         CDecode.h   CDecode.cpp
-        SatPositioning.hpp  SatPositioning.cpp
+        SatPos.h SatPos.cpp
         CDetectOutlier.h    CDetectOutlier.cpp
         SPP.h   SPP.cpp
         Client.h    Client.cpp)

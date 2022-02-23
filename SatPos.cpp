@@ -1,8 +1,7 @@
-#include "SatPositioning.hpp"
+#include "SatPos.h"
 
 PARAS SatPositioning::CalculateParas(const GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem)
 {
-	WGS84 wgs84;
 	PARAS paras;
 	//中间计算量求解
 	paras.A = gpsEphem.A;//GPS轨道长半轴
@@ -31,7 +30,7 @@ PARAS SatPositioning::CalculateParas(const GPSTIME t/*卫星钟表面时*/, const GPSE
 	paras.ik = gpsEphem.i0 + paras.deltaIk + gpsEphem.iDot * paras.tk;//改正过的轨道倾角
 	paras.omegak = gpsEphem.omega0 + (gpsEphem.omegaDot - wgs84.omega) * paras.tk - wgs84.omega * gpsEphem.toe.secOfWeek;//改正后的升交点经度
 	paras.xy0[0] = paras.rk * cos(paras.uk);
-	paras.xy0[1] = paras.rk * sin(paras.uk);;//卫星在轨道平面上的位置
+	paras.xy0[1] = paras.rk * sin(paras.uk);//卫星在轨道平面上的位置
 
 
 	//各参变量对时间的导数
@@ -57,7 +56,6 @@ PARAS SatPositioning::CalculateParas(const GPSTIME t/*卫星钟表面时*/, const GPSE
 
 PARAS SatPositioning::CalculateParas(const BDSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem)
 {
-	CGCS2000 cgcs2000;
 	PARAS paras;
 	//中间计算量求解
 	paras.A = bdsEphem.A;//GPS轨道长半轴
@@ -86,7 +84,7 @@ PARAS SatPositioning::CalculateParas(const BDSTIME t/*卫星钟表面时*/, const BDSE
 	paras.ik = bdsEphem.i0 + paras.deltaIk + bdsEphem.iDot * paras.tk;//改正过的轨道倾角
 	paras.omegak = bdsEphem.omega0 + (bdsEphem.omegaDot - cgcs2000.omega) * paras.tk - cgcs2000.omega * bdsEphem.toe.secOfWeek;//改正后的升交点经度
 	paras.xy0[0] = paras.rk * cos(paras.uk);
-	paras.xy0[1] = paras.rk * sin(paras.uk);;//卫星在轨道平面上的位置
+	paras.xy0[1] = paras.rk * sin(paras.uk);//卫星在轨道平面上的位置
 
 
 	//各参变量对时间的导数
@@ -138,7 +136,6 @@ void SatPositioning::GpsPosVel(const GPSTIME t, const GPSEPHEM& gpsEphem, PARAS&
 
 void SatPositioning::GpsClockBias(const GPSTIME t, double ek, const GPSEPHEM& gpsEphem)
 {
-	WGS84 wgs84;//椭球参数
 	double F = -2.0 * sqrt(wgs84.GM) / constant::c / constant::c;
 	double delta_tr = F * gpsEphem.ecc * sqrt(gpsEphem.A) * sin(ek);//相对论效应误差改正项
 	double delta_t = SoWSubtraction(t.secOfWeek, gpsEphem.toc.secOfWeek);
@@ -147,7 +144,6 @@ void SatPositioning::GpsClockBias(const GPSTIME t, double ek, const GPSEPHEM& gp
 
 void SatPositioning::GpsClockRate(const GPSTIME t, double ek, double ekDot, const GPSEPHEM& gpsEphem)
 {
-	WGS84 wgs84;//椭球参数
 	double F = -2.0 * sqrt(wgs84.GM) / constant::c / constant::c;//相对论效应误差改正
 	double delta_trDot = F * gpsEphem.ecc * sqrt(gpsEphem.A) * cos(ek) * ekDot;
 	this->clkRate = gpsEphem.af[1] + 2 * gpsEphem.af[2] * SoWSubtraction(t.secOfWeek, gpsEphem.toc.secOfWeek) + delta_trDot;
@@ -177,8 +173,7 @@ void SatPositioning::BdsPosVel(const BDSTIME t, const BDSEPHEM& bdsEphem, PARAS&
 	/////////////////////////////////
 	//		BDS卫星位置速度计算
 	/////////////////////////////////
-
-	CGCS2000 cgcs2000;
+ 
 	//BDS MEO/IGSO卫星在BDCS坐标系中的位置和速度计算
 	if (!bdsEphem.isGeo())
 	{
@@ -245,7 +240,6 @@ void SatPositioning::BdsPosVel(const BDSTIME t, const BDSEPHEM& bdsEphem, PARAS&
 
 void SatPositioning::BdsClockBias(const BDSTIME t, double ek, const BDSEPHEM& bdsEphem)
 {
-	CGCS2000 cgcs2000;//椭球参数
 	double F = -2.0 * sqrt(cgcs2000.GM) / constant::c / constant::c;
 	double delta_tr = F * bdsEphem.ecc * bdsEphem.rootA * sin(ek);//相对论效应误差改正项
 	double delta_t = SoWSubtraction(t.secOfWeek, bdsEphem.toc);
@@ -254,7 +248,6 @@ void SatPositioning::BdsClockBias(const BDSTIME t, double ek, const BDSEPHEM& bd
 
 void SatPositioning::BdsClockRate(const BDSTIME t, double ek, double ekDot, const BDSEPHEM& bdsEphem)
 {
-	CGCS2000 cgcs2000;//椭球参数
 	double F = -2.0 * sqrt(cgcs2000.GM) / constant::c / constant::c;//相对论效应误差改正
 	double delta_trDot = F * bdsEphem.ecc * bdsEphem.rootA * cos(ek) * ekDot;
 	this->clkRate = bdsEphem.a[1] + 2 * bdsEphem.a[2] * SoWSubtraction(t.secOfWeek, bdsEphem.toc) + delta_trDot;
@@ -270,6 +263,62 @@ bool SatPositioning::BdsOod(const GPSTIME t, const  BDSEPHEM& bdsEphem)
 		return true;
 }
 
+void SatPositioning::CalSatE(const XYZ& rcvrXyz, CoorSys& coor)
+{
+    //卫星高度角计算
+    BLH rcvrBlh = XYZ2BLH(rcvrXyz, coor);//接收机的大地坐标
+    CMatrix trans(3, 3);//转换矩阵
+    CMatrix line(3, 1);//接收机与卫星的连线
+    CMatrix satxyz(3, 1);//卫星在站心坐标系中的坐标
+    
+    trans.mat[0] = -sin(rcvrBlh.B) * cos(rcvrBlh.L);
+    trans.mat[1] = -sin(rcvrBlh.B) * sin(rcvrBlh.L);
+    trans.mat[2] = cos(rcvrBlh.B);
+    trans.mat[3] = -sin(rcvrBlh.L);
+    trans.mat[4] = cos(rcvrBlh.L);
+    trans.mat[5] = 0;
+    trans.mat[6] = cos(rcvrBlh.B) * cos(rcvrBlh.L);
+    trans.mat[7] = cos(rcvrBlh.B) * sin(rcvrBlh.L);
+    trans.mat[8] = sin(rcvrBlh.B);
+    trans.check();//B=0 L=0 H=0的情况
+    
+    line.mat[0] = this->satXyz.x - rcvrXyz.x;
+    line.mat[1] = this->satXyz.y - rcvrXyz.y;
+    line.mat[2] = this->satXyz.z - rcvrXyz.z;
+    
+    satxyz = trans * line;//卫星在站心坐标系中的坐标
+    
+    this->eleAngle = atan(satxyz.mat[2] / sqrt(satxyz.mat[0] * satxyz.mat[0] + satxyz.mat[1] * satxyz.mat[1]));//卫星高度角
+}
+
+void SatPositioning::Hopefield(const XYZ& rcvrXyz, CoorSys& coor)
+{
+    BLH rcvrBlh = XYZ2BLH(rcvrXyz, coor);
+    double H = rcvrBlh.H;//接收机大地高，方便后面书写
+    if (H > 1e+4)
+    {
+        this->tropDelay = 10;
+        return ;//测站高度不在对流层范围
+    }
+    double H0 = 0.0;//m 海平面
+    double T0 = 20.0 + 273.16;//K 温度
+    double p0 = 1013.25;//mbar 气压
+    double RH0 = 0.5;//相对湿度
+    
+    double RH = RH0 * exp(-0.0006369 * (H - H0));
+    double p = p0 * pow(1 - 2.26e-5 * (H - H0), 5.225);
+    double T = T0 - 0.0065 * (H - H0);
+    double e = RH * exp(-37.2465 + 0.213166 * T - 0.000256908 * T * T);
+    double hw = 11000.0;
+    double hd = 40136.0 + 148.72 * (T0 - 273.16);
+    double Kw = 155.2e-7 * 4810.0 / (T * T) * e * (hw - H);
+    double Kd = 155.2e-7 * p / T * (hd - H);
+    
+    double E = this->eleAngle * 180.0 / constant::pi;
+    double deltaD = Kd / sin(sqrt(E * E + 6.25) / 180.0 * constant::pi);
+    double deltaW = Kw / sin(sqrt(E * E + 2.25) / 180.0 * constant::pi);
+    this->tropDelay = deltaD + deltaW;
+}
 
 
 

@@ -1,13 +1,13 @@
 #pragma once
 #include "CDecode.h"
-#include "SatPositioning.hpp"
+#include "SatPos.h"
 #include "CDetectOutlier.h"
 #include <cstdio>
 
 class SPP
 {
 private:
-	GPSTIME t;//信号发射时刻
+	GPSTIME t{};//信号发射时刻
 
 	XYZ sttnXyz{};//测站在地心地固坐标系下的坐标
 	BLH sttnBlh{};//测站在WGS84坐标系下的坐标
@@ -33,10 +33,6 @@ public:
 	void CalDNEU();//计算测站在NEU系下的定位误差
 
 	void check();
-	SPP()
-	{
-		memset(this, 0, sizeof(SPP));
-	}
 };
 
 

@@ -1,5 +1,6 @@
 #include "SPP.h"
 
+
 void SPP::ExtendMatB(CMatrix& B, int total) const
 {
 	auto* gB = new double[total];//GPS
@@ -56,7 +57,6 @@ void SPP::ExtendDeltaX(CMatrix& deltaX) const
 
 void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 {
-	WGS84 wgs84;
 	this->t = raw.epkObs.t;
 
 	int usfNum;//可用卫星计数
@@ -367,7 +367,6 @@ void SPP::check()
 
 void SPP::CalDNEU()
 {
-	WGS84 wgs84;
 	XYZ refXyz = { -2267794.9370, 5009345.2360, 3220980.3120 };
 	BLH refBlh = XYZ2BLH(refXyz, wgs84);
 	double dXyz[3] = {};

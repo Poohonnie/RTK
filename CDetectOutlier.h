@@ -3,16 +3,15 @@
 
 struct GFMW
 {
-	GNSS sys;
-	unsigned short prn;
-	double LMW;
-	double LGF;
-	double LIF;
-	double PIF;
-	int n;//历元数，1表示第一个历元
+	GNSS sys{};
+	unsigned short prn{};
+	double LMW{};
+	double LGF{};
+	double LIF{};
+	double PIF{};
+	int n{};//历元数，1表示第一个历元
 
-	bool valid;
-
+	bool valid{};
 };
 
 struct EPKGFMW
@@ -31,10 +30,6 @@ public:
 	friend class Client;
 	friend class SPP;
 	void DetectOutlier(RAWDATA raw);//粗差探测流程
-
-	CDetectOutlier()
-	{
-		memset(this, 0, sizeof(CDetectOutlier));
-	};
+ 
 };
 
