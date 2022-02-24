@@ -2,27 +2,36 @@
 
 void SATOBS::check()
 {
-	if (fabs(this->P[0]) < 1.0e-5 || fabs(this->P[1]) < 1.0e-5 || fabs(this->L[0]) < 1.0e-5 || fabs(this->L[1]) < 1.0e-5 || fabs(this->D[0]) < 1.0e-5 || fabs(this->D[1]) < 1.0e-5 )
-		this->valid = false;
+	if (fabs(P[0]) < 1.0e-5 || fabs(P[1]) < 1.0e-5 || fabs(L[0]) < 1.0e-5 || fabs(L[1]) < 1.0e-5 || fabs(D[0]) < 1.0e-5 || fabs(D[1]) < 1.0e-5 )
+		valid = false;
 }
 
 int EPKOBS::FindSatObsIndex(const int prn, const GNSS sys)
 {
 	for (int i = 0; i < MAXCHANNELNUM; i++)
 	{
-		if ((this->satObs[i].prn == prn && this->satObs[i].sys == sys) || this->satObs[i].prn == 0)
+		if ((satObs[i].prn == prn && satObs[i].sys == sys) || satObs[i].prn == 0)
 			return i;//返回所找到的satObs数组下标 或 返回空satObs下标
 	}
 	return 114514;
 }
 
-bool BDSEPHEM::isGeo() const
+//bool BDSEPHEM::isGeo() const
+//{
+//	if ((this->satId > 0 && this->satId <= 5 )|| (this->satId >= 59 && this->satId <= 61))
+//		return true;
+//	else
+//		return false;
+//}
+
+bool EPHEMERIS::isGeo() const
 {
-	if ((this->satId > 0 && this->satId <= 5 )|| (this->satId >= 59 && this->satId <= 61))
-		return true;
-	else
-		return false;
+    if ((prn > 0 && prn <= 5 )|| (prn >= 59 && prn <= 61))
+        return true;
+    else
+        return false;
 }
+
 
 int CFileDecode::DecodeOem719Msg(FILE* fp)
 {
@@ -69,28 +78,20 @@ int CFileDecode::DecodeOem719Msg(FILE* fp)
 		{
 		case 43:
 			//range
-		{
 			DecodeOem719Obs(buf);
 			return 43;
-		}
 		case 42:
 			//PSRPOS
-		{
 			DecodeOem719Bestpos(buf);
 			break;
-		}
 		case 7:
 			//GPSEPHEM
-		{
 			DecodeOem719GpsEphem(buf);
 			break;
-		}
 		case 1696:
 			//BDSEPHEMERIS
-		{
 			DecodeOem719BdsEphem(buf);
 			break;
-		}
 		default:
 			break;
 		}
@@ -108,7 +109,7 @@ void CDecode::DecodeOem719Obs(unsigned char* buf)
 	int sigType;//Signal Type
 	int sysn;//Satellite System
 	GNSS sys;//Satellite System的具体名称
-	int prn;//卫星prn号
+	unsigned short prn;//卫星prn号
 	int freq;//SATOBS频率下标 0，1
 	int n;//satObs的下标
 	double wl;//wavelength
@@ -158,103 +159,93 @@ void CDecode::DecodeOem719Obs(unsigned char* buf)
 		else
 			continue;//卫星类型不为GPS或BDS中的任意一个
 
-		n = this->raw.epkObs.FindSatObsIndex(prn, sys);//找到观测数据在staObs数组中的存储位置
-		this->raw.epkObs.satObs[n].prn = prn;
-		this->raw.epkObs.satObs[n].sys = sys;
+		n = raw.epkObs.FindSatObsIndex(prn, sys);//找到观测数据在staObs数组中的存储位置
+		raw.epkObs.satObs[n].prn = prn;
+		raw.epkObs.satObs[n].sys = sys;
 
-		this->raw.epkObs.satObs[n].P[freq] = R8(p + 4);
-		this->raw.epkObs.satObs[n].psrSigma[freq] = R4(p + 12);
+		raw.epkObs.satObs[n].P[freq] = R8(p + 4);
 
-		this->raw.epkObs.satObs[n].L[freq] = -wl * R8(p + 16);//要乘-1，不然后面通不过
-		this->raw.epkObs.satObs[n].cpSigma[freq] = R4(p + 24);
+		raw.epkObs.satObs[n].L[freq] = -wl * R8(p + 16);//要乘-1，不然后面通不过
 
-		this->raw.epkObs.satObs[n].D[freq] = R4(p + 28);
-		this->raw.epkObs.satObs[n].cnr = R4(p + 32);
-		this->raw.epkObs.satObs[n].valid = true;
+		raw.epkObs.satObs[n].D[freq] = R4(p + 28);
+		raw.epkObs.satObs[n].valid = true;
 	}
-	this->raw.epkObs.t = this->t;//观测数据时间
-	this->raw.epkObs.satNum = this->raw.epkObs.FindSatObsIndex(-1, GNSS::GPS);//确定epkObs里所含的卫星数目
+	raw.epkObs.t = t;//观测数据时间
+	raw.epkObs.satNum = raw.epkObs.FindSatObsIndex(-1, GNSS::GPS);//确定epkObs里所含的卫星数目
 }
 
 void CDecode::DecodeOem719GpsEphem(unsigned char* buf)
 {
 	unsigned char* H = buf + 28;//头文件结束，正文起始
-	int prn = U4(H);
-	this->raw.gpsEphem[prn - 1].prn = U4(H);
-	this->raw.gpsEphem[prn - 1].tow = R8(H + 4);
-	this->raw.gpsEphem[prn - 1].health = U4(H + 12);
-	memcpy(this->raw.gpsEphem[prn - 1].iode, H + 16, 8);
-	this->raw.gpsEphem[prn - 1].toe.week = U4(H + 24);
-	//z week 略去
-	this->raw.gpsEphem[prn - 1].toe.secOfWeek = R8(H + 32);
-	this->raw.gpsEphem[prn - 1].A = R8(H + 40);
-	this->raw.gpsEphem[prn - 1].deltaN = R8(H + 48);
-	this->raw.gpsEphem[prn - 1].m0 = R8(H + 56);
-	this->raw.gpsEphem[prn - 1].ecc = R8(H + 64);
-	this->raw.gpsEphem[prn - 1].omega = R8(H + 72);
-	this->raw.gpsEphem[prn - 1].cuc = R8(H + 80);
-	this->raw.gpsEphem[prn - 1].cus = R8(H + 88);
-	this->raw.gpsEphem[prn - 1].crc = R8(H + 96);
-	this->raw.gpsEphem[prn - 1].crs = R8(H + 104);
-	this->raw.gpsEphem[prn - 1].cic = R8(H + 112);
-	this->raw.gpsEphem[prn - 1].cis = R8(H + 120);
-	this->raw.gpsEphem[prn - 1].i0 = R8(H + 128);
-	this->raw.gpsEphem[prn - 1].iDot = R8(H + 136);
-	this->raw.gpsEphem[prn - 1].omega0 = R8(H + 144);
-	this->raw.gpsEphem[prn - 1].omegaDot = R8(H + 152);
-	this->raw.gpsEphem[prn - 1].iodc = U4(H + 160);
+	unsigned long prn = U4(H);
+    
+    raw.gpsEphem[prn - 1].satSys = GNSS::GPS;
+    raw.gpsEphem[prn - 1].prn = U4(H);
+	raw.gpsEphem[prn - 1].health = U4(H + 12);
+	raw.gpsEphem[prn - 1].toeG.week = U4(H + 24);
+	raw.gpsEphem[prn - 1].toeG.secOfWeek = R8(H + 32);
+	raw.gpsEphem[prn - 1].A = R8(H + 40);
+	raw.gpsEphem[prn - 1].deltaN = R8(H + 48);
+	raw.gpsEphem[prn - 1].m0 = R8(H + 56);
+	raw.gpsEphem[prn - 1].ecc = R8(H + 64);
+	raw.gpsEphem[prn - 1].omega = R8(H + 72);
+	raw.gpsEphem[prn - 1].cuc = R8(H + 80);
+	raw.gpsEphem[prn - 1].cus = R8(H + 88);
+	raw.gpsEphem[prn - 1].crc = R8(H + 96);
+	raw.gpsEphem[prn - 1].crs = R8(H + 104);
+	raw.gpsEphem[prn - 1].cic = R8(H + 112);
+	raw.gpsEphem[prn - 1].cis = R8(H + 120);
+	raw.gpsEphem[prn - 1].i0 = R8(H + 128);
+	raw.gpsEphem[prn - 1].iDot = R8(H + 136);
+	raw.gpsEphem[prn - 1].omega0 = R8(H + 144);
+	raw.gpsEphem[prn - 1].omegaDot = R8(H + 152);
 
-	this->raw.gpsEphem[prn - 1].toc.week = this->raw.gpsEphem[prn - 1].toe.week;//待定
-	this->raw.gpsEphem[prn - 1].toc.secOfWeek = R8(H + 164);
+	raw.gpsEphem[prn - 1].toc = R8(H + 164);
 
-	this->raw.gpsEphem[prn - 1].tgd = R8(H + 172);
-	memcpy(this->raw.gpsEphem[prn - 1].af, H + 180, 24);
-	this->raw.gpsEphem[prn - 1].as = U4(H + 204);
-	this->raw.gpsEphem[prn - 1].N = R8(H + 208);
-	this->raw.gpsEphem[prn - 1].ura = R8(H + 216);
+	raw.gpsEphem[prn - 1].tgd[0] = R8(H + 172);
+	memcpy(raw.gpsEphem[prn - 1].af, H + 180, 24);
 }
 
 void CDecode::DecodeOem719BdsEphem(unsigned char* buf)
 {
 	unsigned char* H = buf + 28;//头文件结束，正文起始
-	int satId = U4(H);
-	this->raw.bdsEphem[satId - 1].satId = U4(H);
-	this->raw.bdsEphem[satId - 1].toe.week = U4(H + 4);
-	this->raw.bdsEphem[satId - 1].ura = R8(H + 8);
-	this->raw.bdsEphem[satId - 1].health = U4(H + 16);
-	memcpy(this->raw.bdsEphem[satId - 1].tgd, H + 20, 16);
-	this->raw.bdsEphem[satId - 1].aodc = U4(H + 36);
-	this->raw.bdsEphem[satId - 1].toc = U4(H + 40);
-	memcpy(this->raw.bdsEphem[satId - 1].a, H + 44, 24);
-	this->raw.bdsEphem[satId - 1].aode = U4(H + 68);
-	this->raw.bdsEphem[satId - 1].toe.secOfWeek = U4(H + 72);
-	this->raw.bdsEphem[satId - 1].rootA = R8(H + 76);
-	this->raw.bdsEphem[satId - 1].A = this->raw.bdsEphem[satId - 1].rootA * this->raw.bdsEphem[satId - 1].rootA;
-	this->raw.bdsEphem[satId - 1].ecc = R8(H + 84);
-	this->raw.bdsEphem[satId - 1].omega = R8(H + 92);
-	this->raw.bdsEphem[satId - 1].deltaN = R8(H + 100);
-	this->raw.bdsEphem[satId - 1].m0 = R8(H + 108);
-	this->raw.bdsEphem[satId - 1].omega0 = R8(H + 116);
-	this->raw.bdsEphem[satId - 1].omegaDot = R8(H + 124);
-	this->raw.bdsEphem[satId - 1].i0 = R8(H + 132);
-	this->raw.bdsEphem[satId - 1].iDot = R8(H + 140);
-	this->raw.bdsEphem[satId - 1].cuc = R8(H + 148);
-	this->raw.bdsEphem[satId - 1].cus = R8(H + 156);
-	this->raw.bdsEphem[satId - 1].crc = R8(H + 164);
-	this->raw.bdsEphem[satId - 1].crs = R8(H + 172);
-	this->raw.bdsEphem[satId - 1].cic = R8(H + 180);
-	this->raw.bdsEphem[satId - 1].cis = R8(H + 188);
+	unsigned long prn = U4(H);
+    
+    raw.bdsEphem[prn - 1].satSys = GNSS::BDS;
+	raw.bdsEphem[prn - 1].prn = U4(H);
+	raw.bdsEphem[prn - 1].toeB.week = U4(H + 4);
+	raw.bdsEphem[prn - 1].health = U4(H + 16);
+	memcpy(raw.bdsEphem[prn - 1].tgd, H + 20, 16);
+	raw.bdsEphem[prn - 1].toc = U4(H + 40);
+	memcpy(raw.bdsEphem[prn - 1].af, H + 44, 24);
+	raw.bdsEphem[prn - 1].toeB.secOfWeek = U4(H + 72);
+	double rootA = R8(H + 76);
+	raw.bdsEphem[prn - 1].A = rootA * rootA;
+	raw.bdsEphem[prn - 1].ecc = R8(H + 84);
+	raw.bdsEphem[prn - 1].omega = R8(H + 92);
+	raw.bdsEphem[prn - 1].deltaN = R8(H + 100);
+	raw.bdsEphem[prn - 1].m0 = R8(H + 108);
+	raw.bdsEphem[prn - 1].omega0 = R8(H + 116);
+	raw.bdsEphem[prn - 1].omegaDot = R8(H + 124);
+	raw.bdsEphem[prn - 1].i0 = R8(H + 132);
+	raw.bdsEphem[prn - 1].iDot = R8(H + 140);
+	raw.bdsEphem[prn - 1].cuc = R8(H + 148);
+	raw.bdsEphem[prn - 1].cus = R8(H + 156);
+	raw.bdsEphem[prn - 1].crc = R8(H + 164);
+	raw.bdsEphem[prn - 1].crs = R8(H + 172);
+	raw.bdsEphem[prn - 1].cic = R8(H + 180);
+	raw.bdsEphem[prn - 1].cis = R8(H + 188);
 }
 
 void CDecode::DecodeOem719Bestpos(unsigned char* buf)
 {
 	//观测数据时间
-	this->raw.bestPos.time = this->t;
+	raw.bestPos.time = t;
 
 	unsigned char* H = buf + 28;//头文件结束，正文起始
-	this->raw.bestPos.blh.B = R8(H + 8);
-	this->raw.bestPos.blh.L = R8(H + 16);
-	this->raw.bestPos.blh.H = R8(H + 24);
+	raw.bestPos.blh.B = R8(H + 8);
+	raw.bestPos.blh.L = R8(H + 16);
+	raw.bestPos.blh.H = R8(H + 24);
 }
 
 
@@ -303,11 +294,6 @@ double CDecode::R8(unsigned char* buf)
 	double val = 0.0;
 	memcpy(&val, buf, 8);
 	return val;
-}
-
-RAWDATA CDecode::Raw()
-{
-	return this->raw;
 }
 
 FILE* CFileDecode::FileRead(const char* fileName)
@@ -441,3 +427,4 @@ void CSocketDecode::CloseSocket(SOCKET& sock)
 	closesocket(sock);
 	WSACleanup();
 }
+

@@ -76,7 +76,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 	sttnX.mat[2] = this->sttnXyz.z;
 	sttnX.mat[3] = this->sttnClkG;
 	sttnX.mat[4] = this->sttnClkB;
-	memset(this->satPos, 0, MAXCHANNELNUM * sizeof(SatPositioning));
+	memset(this->satPos, 0, MAXCHANNELNUM * sizeof(SatPos));
 
 	int calTimes = 0;//迭代计数
 	do
@@ -115,12 +115,12 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				double transT = epkGfmw.gfmw[gi].PIF / constant::c;
 				
 				GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
-				if (!SatPositioning::GpsOod(ttr, raw.gpsEphem[prn - 1]))
+				if (SatPos::Overdue(ttr, raw.gpsEphem[prn - 1]))
 					//星历过期
 					continue;
 				for (int k = 0; k < 4; k++)
 				{
-					satPos[i].CalGps(ttr, raw.gpsEphem[prn - 1]);
+					satPos[i].CalSat(ttr, raw.gpsEphem[prn - 1]);
 					ttr = ttr - satPos[i].clkBias;
 				}
 				//计算信号传输时刻
@@ -167,18 +167,18 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 				this->gNum++;
 				usfNum++;//可用卫星计数+1
 			}
-			else if (raw.epkObs.satObs[i].sys == GNSS::BDS && raw.bdsEphem[prn - 1].satId == prn/*该卫星星历存在*/)
+			else if (raw.epkObs.satObs[i].sys == GNSS::BDS && raw.bdsEphem[prn - 1].prn == prn/*该卫星星历存在*/)
 			{
 				//计算信号发射时刻
 				//double transT = raw.epkObs.satObs[i].P[0] / constant::c;
 				double transT = epkGfmw.gfmw[gi].PIF / constant::c;
 				GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
-				if (!SatPositioning::BdsOod(ttr, raw.bdsEphem[prn - 1]))
+				if (SatPos::Overdue(ttr, raw.bdsEphem[prn - 1]))
 					//星历过期
 					continue;
 				for (int k = 0; k < 4; k++)
 				{
-					satPos[i].CalBds(ttr, raw.bdsEphem[prn - 1]);
+					satPos[i].CalSat(ttr, raw.bdsEphem[prn - 1]);
 					ttr = ttr - satPos[i].clkBias;
 				}
 				//计算信号传输时刻
@@ -324,7 +324,7 @@ void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 			//w矩阵赋值
 			arrw[usfNum] = -lambda1 * raw.epkObs.satObs[i].D[0] + constant::c * this->satPos[i].clkRate - rhoDot;
 		}
-		else if (raw.epkObs.satObs[i].sys == GNSS::BDS && raw.bdsEphem[prn - 1].satId == prn/*该卫星星历存在*/)
+		else if (raw.epkObs.satObs[i].sys == GNSS::BDS && raw.bdsEphem[prn - 1].prn == prn/*该卫星星历存在*/)
 		{
 			double lambda1 = constant::c / 1561.098e+6;
 			//w矩阵赋值

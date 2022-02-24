@@ -23,7 +23,7 @@ private:
 	double dE{}; double dN{}; double dU{};
 	int gNum{};int bNum{};
 
-	SatPositioning satPos[MAXCHANNELNUM];
+	SatPos satPos[MAXCHANNELNUM];
 public:
 	friend class Client;
 	void ExtendMatB(CMatrix& B, int total) const;//将设计矩阵B根据GPS以及BDS卫星数目情况进行扩展

@@ -49,7 +49,7 @@ struct PARAS
  
 };
 
-class SatPositioning
+class SatPos
 {
 protected:
 	XYZ satXyz{};//卫星在地心地固坐标系下的坐标
@@ -61,26 +61,16 @@ protected:
 	
 public:
 	friend class SPP;
-	static PARAS CalculateParas(GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem);
-	static PARAS CalculateParas(BDSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem);
+    
+    static PARAS CalParas(GPSTIME t/*卫星钟表面时*/, const EPHEMERIS& ephem);
 
-	void CalGps(GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem);
-	void GpsPosVel(GPSTIME t/*卫星钟表面时*/, const GPSEPHEM& gpsEphem, PARAS& gPara);//GPS卫星位置计算
-	void GpsClockBias(GPSTIME t/*卫星钟表面时*/, double ek, const GPSEPHEM& gpsEphem);//GPS钟差计算
-	void GpsClockRate(GPSTIME t/*卫星钟表面时*/, double ek, double ekDot, const GPSEPHEM& gpsEphem);//GPS钟速计算
-	static bool GpsOod(GPSTIME t, const GPSEPHEM& gpsEphem);//判断星历过期情况
-
-	void CalBds(GPSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem);
-	void BdsPosVel(BDSTIME t/*卫星钟表面时*/, const BDSEPHEM& bdsEphem, PARAS& bPara);//BDS卫星位置计算
-	void BdsClockBias(BDSTIME t/*卫星钟表面时*/, double ek, const BDSEPHEM& bdsEphem);//BDS钟差计算
-	void BdsClockRate(BDSTIME t/*卫星钟表面时*/, double ek, double ekDot, const BDSEPHEM& bdsEphem);//BDS钟速计算
-	static bool BdsOod(GPSTIME t, const BDSEPHEM& bdsEphem);//判断星历过期情况
+    void CalSat(GPSTIME t, const  EPHEMERIS& ephem);//计算卫星相关数据
+    void CalPosVel(const EPHEMERIS& ephem, PARAS& para);//卫星位置速度计算
+    void ClockBias(GPSTIME t, double ek, const EPHEMERIS& ephem);//钟差计算
+    void ClockRate(GPSTIME t, double ek, double ekDot, const EPHEMERIS& ephem);//钟速计算
+    static bool Overdue(GPSTIME t, const  EPHEMERIS& ephem);//判断星历是否过期
  
 	void CalSatE(const XYZ& rcvr/*接收机地心地固坐标*/, CoorSys& coor/*坐标系*/);//卫星高度角的计算
 	void Hopefield(const XYZ& rcvr/*接收机地心地固坐标*/, CoorSys& coor/*坐标系*/);//对流层Hopefield模型改正
-
-	SatPositioning()
-	{
-		memset(this, 0, sizeof(SatPositioning));
-	}
+ 
 };

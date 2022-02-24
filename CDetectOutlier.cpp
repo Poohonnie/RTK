@@ -5,7 +5,7 @@ void CDetectOutlier::DetectOutlier(RAWDATA raw)
 	double f1 = 1.0;//L1频率
 	double f2 = 1.0;//L2频率
 	
-	memset(&this->curEpk, 0, sizeof(EPKGFMW));
+	memset(&curEpk, 0, sizeof(EPKGFMW));
 
 	for (int oi = 0, gi = 0; oi < raw.epkObs.satNum; oi++, gi++)
 	{
@@ -20,9 +20,9 @@ void CDetectOutlier::DetectOutlier(RAWDATA raw)
 		double P2 = raw.epkObs.satObs[oi].P[1];
 
 		//标记该GFMW组合的卫星种类和PRN号
-		this->curEpk.gfmw[gi].sys = raw.epkObs.satObs[oi].sys;
-		this->curEpk.gfmw[gi].prn = raw.epkObs.satObs[oi].prn;
-		this->curEpk.gfmw[gi].n = 1;//标记该gfmw组合是首次出现，第一个历元
+		curEpk.gfmw[gi].sys = raw.epkObs.satObs[oi].sys;
+		curEpk.gfmw[gi].prn = raw.epkObs.satObs[oi].prn;
+		curEpk.gfmw[gi].n = 1;//标记该gfmw组合是首次出现，第一个历元
 
 		if (raw.epkObs.satObs[oi].sys == GNSS::GPS)
 		{
@@ -34,57 +34,57 @@ void CDetectOutlier::DetectOutlier(RAWDATA raw)
 			f1 = 1561.098e+6;
 			f2 = 1268.52e+6;
 		}
-		this->curEpk.gfmw[gi].LMW = 1.0 / (f1 - f2) * (f1 * L1 - f2 * L2) - 1.0 / (f1 + f2) * (f1 * P1 + f2 * P2);//MW组合
-		this->curEpk.gfmw[gi].LGF = L1 - L2;//GF组合
+		curEpk.gfmw[gi].LMW = 1.0 / (f1 - f2) * (f1 * L1 - f2 * L2) - 1.0 / (f1 + f2) * (f1 * P1 + f2 * P2);//MW组合
+		curEpk.gfmw[gi].LGF = L1 - L2;//GF组合
 
-		int j = this->lastEpk.FindSatObsIndex(raw.epkObs.satObs[oi].prn, raw.epkObs.satObs[oi].sys);//raw.epkObs里的卫星在上一历元GFMW观测值里的下标
+		int j = lastEpk.FindSatObsIndex(raw.epkObs.satObs[oi].prn, raw.epkObs.satObs[oi].sys);//raw.epkObs里的卫星在上一历元GFMW观测值里的下标
 		if (j == 114514)
 		{
 			//说明这是第一个历元
-			this->curEpk.gfmw[gi].valid = true;
-			this->curEpk.gfmw[gi].n = 1;
+			curEpk.gfmw[gi].valid = true;
+			curEpk.gfmw[gi].n = 1;
 
 			double dif = f1 * f1 - f2 * f2;//平方差
 			//IF组合
-			this->curEpk.gfmw[gi].LIF = 1.0 / dif * (f1 * f1 * L1 - f2 * f2 * L2);//LIF
+			curEpk.gfmw[gi].LIF = 1.0 / dif * (f1 * f1 * L1 - f2 * f2 * L2);//LIF
 			if (curEpk.gfmw[gi].sys == GNSS::GPS)
-				this->curEpk.gfmw[gi].PIF = 1.0 / dif * (f1 * f1 * P1 - f2 * f2 * P2);//PIF
+				curEpk.gfmw[gi].PIF = 1.0 / dif * (f1 * f1 * P1 - f2 * f2 * P2);//PIF
 			else if (curEpk.gfmw[gi].sys == GNSS::BDS)
-				this->curEpk.gfmw[gi].PIF = 1.0 / dif * (f1 * f1 * P1 - f2 * f2 * P2) - constant::c * f1 * f1 * raw.bdsEphem[raw.epkObs.satObs[oi].prn - 1].tgd[0] / dif;//PIF
+				curEpk.gfmw[gi].PIF = 1.0 / dif * (f1 * f1 * P1 - f2 * f2 * P2) - constant::c * f1 * f1 * raw.bdsEphem[raw.epkObs.satObs[oi].prn - 1].tgd[0] / dif;//PIF
 		}
 		else if (j < raw.epkObs.satNum && j >= 0)
 		{
-			double dGF = this->curEpk.gfmw[gi].LGF - this->lastEpk.gfmw[j].LGF;
-			double dMW = this->curEpk.gfmw[gi].LMW - this->lastEpk.gfmw[j].LMW;
+			double dGF = curEpk.gfmw[gi].LGF - lastEpk.gfmw[j].LGF;
+			double dMW = curEpk.gfmw[gi].LMW - lastEpk.gfmw[j].LMW;
 			if ((fabs(dGF) < 0.05 && fabs(dMW) < 3.0))
 			{
-				this->curEpk.gfmw[gi].valid = true;
-				this->curEpk.gfmw[gi].LMW = (this->lastEpk.gfmw[j].n * this->lastEpk.gfmw[j].LMW + this->curEpk.gfmw[gi].LMW) / (this->lastEpk.gfmw[j].n + 1.0);
-				this->curEpk.gfmw[gi].n = this->lastEpk.gfmw[j].n + 1;
+				curEpk.gfmw[gi].valid = true;
+				curEpk.gfmw[gi].LMW = (lastEpk.gfmw[j].n * lastEpk.gfmw[j].LMW + curEpk.gfmw[gi].LMW) / (lastEpk.gfmw[j].n + 1.0);
+				curEpk.gfmw[gi].n = lastEpk.gfmw[j].n + 1;
 
 				double dif = f1 * f1 - f2 * f2;//平方差
 				//IF组合
-				this->curEpk.gfmw[gi].LIF = 1.0 / dif * (f1 * f1 * L1 - f2 * f2 * L2);//LIF
+				curEpk.gfmw[gi].LIF = 1.0 / dif * (f1 * f1 * L1 - f2 * f2 * L2);//LIF
 				if (curEpk.gfmw[gi].sys == GNSS::GPS)
-					this->curEpk.gfmw[gi].PIF = 1.0 / dif * (f1 * f1 * P1 - f2 * f2 * P2);//PIF
+					curEpk.gfmw[gi].PIF = 1.0 / dif * (f1 * f1 * P1 - f2 * f2 * P2);//PIF
 				else if (curEpk.gfmw[gi].sys == GNSS::BDS)
-					this->curEpk.gfmw[gi].PIF = 1.0 / dif * (f1 * f1 * P1 - f2 * f2 * P2) - constant::c * f1 * f1 * raw.bdsEphem[raw.epkObs.satObs[oi].prn - 1].tgd[0] / dif;//PIF
+					curEpk.gfmw[gi].PIF = 1.0 / dif * (f1 * f1 * P1 - f2 * f2 * P2) - constant::c * f1 * f1 * raw.bdsEphem[raw.epkObs.satObs[oi].prn - 1].tgd[0] / dif;//PIF
 			}
 			else
 			{
-				memset(this->curEpk.gfmw + gi, 0, sizeof(GFMW));
+				memset(curEpk.gfmw + gi, 0, sizeof(GFMW));
 				gi--;
 			}
 		}
 	}
-	memcpy(&this->lastEpk, &this->curEpk, sizeof(EPKGFMW));
+	memcpy(&lastEpk, &curEpk, sizeof(EPKGFMW));
 }
 
 int EPKGFMW::FindSatObsIndex(const int prn, const GNSS sys)
 {
 	for (int i = 0; i < MAXCHANNELNUM; i++)
 	{
-		if (this->gfmw[i].prn == prn && this->gfmw[i].sys == sys)
+		if (gfmw[i].prn == prn && gfmw[i].sys == sys)
 			return i;//返回所找到的satObs数组下标
 	}
 	return 114514;

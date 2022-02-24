@@ -16,13 +16,11 @@ struct SATOBS
 {
 	//单个卫星的观测值
 	GNSS sys{};//卫星所属类型
-	short prn{};//卫星编号
+	unsigned short prn{};//卫星编号
 	double P[2]{};//双频伪距，GPS为L1，L2；北斗为B1，B3
 	double L[2]{};//双频载波相位
 	double D[2]{};//多普勒频移
-	double cnr{};//载噪比
-	double psrSigma[2]{};//伪距精度
-	double cpSigma[2]{};//载波精度
+ 
 	bool valid = false;//通道状态
  
 	void check();//检测双频伪距和相位数据是否完整有效
@@ -38,91 +36,122 @@ struct EPKOBS
 	int FindSatObsIndex(int prn, GNSS sys);//搜索某个prn号的卫星在epkObs中的下标
 };
 
-struct GPSEPHEM
+struct EPHEMERIS
 {
-	//GPS卫星星历
-	unsigned long prn{};//卫星编号
-	double tow{};
-	unsigned long health{};//卫星健康状态
-	unsigned long iode[2]{};//issue of ephemeris data
-	GPSTIME toe{};//GPS时  包含week 和 toe
-	double A{};//长半轴 A
-	double deltaN{};//Mean anomaly correction (rad/sec)
-	double m0{};//Mean anomaly at reference time (semicircles)
-	double ecc{};//卫星轨道偏心率
-
-	double omega{};//近地点角距
-	double omega0{};//升交点经度
-	double omegaDot{};//赤经率
-
-	double cuc{}, cus{};//谐波修正项 单位
-	double crc{}, crs{};//谐波修正项 单位rad   m
-	double cic{}, cis{};//谐波修正项 单位
-
-	double i0{}, iDot{};//倾角 磁倾角变化率
-	unsigned long iodc{};//issue of data clock BDS为AODC
-	GPSTIME toc{};//SV clock correction term
-	double tgd{};//Equipment group delay differential
-	double af[3]{};//时钟改正值 单位s s/s s/s²
-	double N{};//corrected mean motion
-
-	bool as{};//Anti-spoofing
-	double ura{};//用户测距精度
+    //星历
+    GNSS satSys{};
+    unsigned short prn{};//卫星编号
+    unsigned long health{};//卫星健康状态
+    GPSTIME toeG{};//GPS时  包含week 和 toe
+    BDSTIME toeB{};//BDS时  包含week 和 toe
+    double tgd[2]{};//Equipment group delay differential
+    
+    double A{};//长半轴 A
+    double deltaN{};//Mean anomaly correction (rad/sec)
+    double m0{};//Mean anomaly at reference time (semicircles)
+    double ecc{};//卫星轨道偏心率
+    
+    double omega{};//近地点角距
+    double omega0{};//升交点经度
+    double omegaDot{};//赤经率
+    
+    double cuc{}, cus{};//谐波修正项 单位
+    double crc{}, crs{};//谐波修正项 单位rad   m
+    double cic{}, cis{};//谐波修正项 单位
+    
+    double i0{}, iDot{};//倾角 磁倾角变化率
+    double toc{};//SV clock correction term
+    double af[3]{};//时钟改正值 单位s s/s s/s²
+    
+    bool isGeo() const;//判断是否为GEO
 };
 
-struct BDSEPHEM
-{
-	//BDS卫星星历
-	unsigned long satId{};//卫星编号
-	BDSTIME toe{};//GPS时  包含week 和 toe
-	double ura{};//用户测距精度
-	unsigned long health{};//卫星健康状态
-	double tgd[2]{};//Equipment group delay differential
-	unsigned long aodc{};//age of data, clock
-	unsigned long toc{};//reference time of clock parameters
-	double a[3]{};//时钟改正值 单位s s/s s/s²
-
-	unsigned long aode{};//age of data, ephemeris
-	double rootA{};//长半轴的根
-	double A{};
-	double ecc{};//卫星轨道偏心率
-	double omega{};//近地点角距
-	double omega0{};//升交点经度
-	double omegaDot{};//赤经率
-
-	double deltaN{};//Mean anomaly correction (rad/sec)
-	double m0{};//Mean anomaly at reference time (semicircles)
-
-	double i0{}, iDot{};//倾角 磁倾角变化率
-
-	double cuc{}, cus{};//谐波修正项 单位rad   m
-	double crc{}, crs{};//谐波修正项 单位
-	double cic{}, cis{};//谐波修正项 单位
- 
-	bool isGeo() const;//判断是否为GEO
-};
+//struct GPSEPHEM
+//{
+//	//GPS卫星星历
+//	unsigned long prn{};//卫星编号
+//	double tow{};
+//	unsigned long health{};//卫星健康状态
+//	unsigned long iode[2]{};//issue of ephemeris data 没用
+//	GPSTIME toe{};//GPS时  包含week 和 toe
+//	double A{};//长半轴 A
+//	double deltaN{};//Mean anomaly correction (rad/sec)
+//	double m0{};//Mean anomaly at reference time (semicircles)
+//	double ecc{};//卫星轨道偏心率
+//
+//	double omega{};//近地点角距
+//	double omega0{};//升交点经度
+//	double omegaDot{};//赤经率
+//
+//	double cuc{}, cus{};//谐波修正项 单位
+//	double crc{}, crs{};//谐波修正项 单位rad   m
+//	double cic{}, cis{};//谐波修正项 单位
+//
+//	double i0{}, iDot{};//倾角 磁倾角变化率
+//	unsigned long iodc{};//issue of data clock BDS为AODC
+//	double toc{};//SV clock correction term
+//	double tgd{};//Equipment group delay differential
+//	double af[3]{};//时钟改正值 单位s s/s s/s²
+//	double N{};//corrected mean motion
+//
+//	bool as{};//Anti-spoofing
+//	double ura{};//用户测距精度
+//};
+//
+//struct BDSEPHEM
+//{
+//	//BDS卫星星历
+//	unsigned long satId{};//卫星编号
+//	BDSTIME toe{};//BDS时  包含week 和 toe
+//	double ura{};//用户测距精度
+//	unsigned long health{};//卫星健康状态
+//	double tgd[2]{};//Equipment group delay differential
+//	unsigned long aodc{};//age of data, clock
+//	unsigned long toc{};//reference time of clock parameters
+//	double a[3]{};//时钟改正值 单位s s/s s/s²
+//
+//	unsigned long aode{};//age of data, ephemeris
+//	double rootA{};//长半轴的根
+//	double A{};
+//	double ecc{};//卫星轨道偏心率
+//	double omega{};//近地点角距
+//	double omega0{};//升交点经度
+//	double omegaDot{};//赤经率
+//
+//	double deltaN{};//Mean anomaly correction (rad/sec)
+//	double m0{};//Mean anomaly at reference time (semicircles)
+//
+//	double i0{}, iDot{};//倾角 磁倾角变化率
+//
+//	double cuc{}, cus{};//谐波修正项 单位rad   m
+//	double crc{}, crs{};//谐波修正项 单位
+//	double cic{}, cis{};//谐波修正项 单位
+//
+//	bool isGeo() const;//判断是否为GEO
+//};
 
 struct BESTPOS
 {
 	//伪距单点定位位置信息
 	GPSTIME time{};
 	BLH blh{};
-	double ura{};//用户测距精度
 };
 
 struct RAWDATA
 {
-	EPKOBS epkObs;
-	GPSEPHEM gpsEphem[MAXGPSNUM];
-	BDSEPHEM bdsEphem[MAXBDSNUM];
-	BESTPOS bestPos;
+	EPKOBS epkObs{};
+//	GPSEPHEM gpsEphem[MAXGPSNUM];
+//	BDSEPHEM bdsEphem[MAXBDSNUM];
+    EPHEMERIS gpsEphem[MAXGPSNUM]{};
+    EPHEMERIS bdsEphem[MAXBDSNUM]{};
+	BESTPOS bestPos{};
 };
 
 class CDecode
 {
 protected:
-	GPSTIME t;
-	RAWDATA raw;
+	GPSTIME t{};
+	RAWDATA raw{};
 
 public:
 	friend class Client;
