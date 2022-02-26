@@ -2,6 +2,9 @@
 <project version="4">
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/Client.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/SPP.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/SPP.h" charset="GBK" />
     <file url="PROJECT" charset="GBK" />
   </component>
 </project>

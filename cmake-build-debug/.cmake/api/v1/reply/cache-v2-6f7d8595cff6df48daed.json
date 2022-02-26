@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Users/Zing/CLionProjects/SPP/cmake-build-debug"
+			"value" : "c:/Users/Zing/Documents/GitHub/SPP/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -623,7 +623,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Users/Zing/CLionProjects/SPP"
+			"value" : "C:/Users/Zing/Documents/GitHub/SPP"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1230,42 +1230,6 @@
 			"value" : "FALSE"
 		},
 		{
-			"name" : "Project_BINARY_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
-				}
-			],
-			"type" : "STATIC",
-			"value" : "C:/Users/Zing/CLionProjects/SPP/cmake-build-debug"
-		},
-		{
-			"name" : "Project_IS_TOP_LEVEL",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
-				}
-			],
-			"type" : "STATIC",
-			"value" : "ON"
-		},
-		{
-			"name" : "Project_SOURCE_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
-				}
-			],
-			"type" : "STATIC",
-			"value" : "C:/Users/Zing/CLionProjects/SPP"
-		},
-		{
 			"name" : "SPP_BINARY_DIR",
 			"properties" : 
 			[
@@ -1275,7 +1239,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/Zing/CLionProjects/SPP/cmake-build-debug"
+			"value" : "C:/Users/Zing/Documents/GitHub/SPP/cmake-build-debug"
 		},
 		{
 			"name" : "SPP_IS_TOP_LEVEL",
@@ -1299,43 +1263,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Users/Zing/CLionProjects/SPP"
-		},
-		{
-			"name" : "test_BINARY_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
-				}
-			],
-			"type" : "STATIC",
-			"value" : "C:/Users/Zing/CLionProjects/SPP/cmake-build-debug"
-		},
-		{
-			"name" : "test_IS_TOP_LEVEL",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
-				}
-			],
-			"type" : "STATIC",
-			"value" : "ON"
-		},
-		{
-			"name" : "test_SOURCE_DIR",
-			"properties" : 
-			[
-				{
-					"name" : "HELPSTRING",
-					"value" : "Value Computed by CMake"
-				}
-			],
-			"type" : "STATIC",
-			"value" : "C:/Users/Zing/CLionProjects/SPP"
+			"value" : "C:/Users/Zing/Documents/GitHub/SPP"
 		}
 	],
 	"kind" : "cache",

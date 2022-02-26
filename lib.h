@@ -7,7 +7,7 @@ namespace constant
 	const double c = 2.99792458e+8;//光速c, 单位 m/s
 }
 
-enum class GNSS { GPS, BDS, GLONASS, Galileo, QZSS };
+enum class GNSS { GPS, BDS, GLONASS, Galileo };
 
 struct CoorSys
 {

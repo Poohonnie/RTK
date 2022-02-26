@@ -3,63 +3,47 @@
 
 void SPP::ExtendMatB(CMatrix& B, int total) const
 {
-	auto* gB = new double[total];//GPS
-	auto* bB = new double[total];//BDS
-	//赋初值
-	memset(gB, 0, 8 * total);
-	memset(bB, 0, 8 * total);
-
-	//赋1,并扩展B矩阵
-	if (this->gNum)
-	{
-		for (int i = 0; i < this->gNum && i < total; i++)
-			gB[i] = 1;
-		B.AddCol(gB, 3);
-		if (this->bNum)
-		{
-			for (int i = this->gNum; i < total; i++)
-				bB[i] = 1;
-			B.AddCol(bB, 4);
-		}
-	}
-	else if (this->bNum)
-	{
-		for (int i = 0; i < this->bNum && i < total; i++)
-			bB[i] = 1;
-		B.AddCol(bB, 3);
-	}
-	delete[] gB;
-	delete[] bB;
+    //0:GPS 1:BDS 2:GLONASS 3:Galileo
+    double sysB[4][MAXCHANNELNUM];//各卫星系统在B矩阵中的系数，这里按最大的创建，后续可以从中截取
+    
+    //赋初值
+    memset(sysB, 0, 4 * MAXCHANNELNUM * 8);
+    
+    //赋1,并扩展B矩阵
+    int sysCount{};
+    int curTotal{};
+    for(int i = 0; i < 4; ++i)
+    {
+        if(sysNum[i])
+        {
+            for (int j = 0; j < sysNum[i] && j < total; j++)
+                sysB[i][j + curTotal] = 1;
+            B.AddCol(sysB[i], 3 + sysCount);
+            curTotal += sysNum[i];
+            ++sysCount;
+        }
+    }
 }
 
 void SPP::ExtendDeltaX(CMatrix& deltaX) const
 {
-	if (!this->gNum)
-	{
-		//如果GPS卫星数为0，那么钟差与上一历元变化值为0，扩展进deltaX矩阵里
-		double clkG[1] = { 0.0 };
-		deltaX.AddRow(clkG, 3);
-		if (!this->bNum)
-		{
-			//如果BDS卫星数为0，那么钟差与上一历元变化值为0，扩展进deltaX矩阵里
-			double clkB[1] = { 0.0 };
-			deltaX.AddRow(clkB, 3);
-		}
-	}
-	else if (!this->bNum)
-	{
-        //GPS卫星数不为0
-		//如果BDS卫星数为0，那么钟差与上一历元变化值为0，扩展进deltaX矩阵里
-		double clkB[1] = { 0.0 };
-		deltaX.AddRow(clkB, 4);
-	}
+    double clk[1] = {};
+    for(int i = 0; i < 2; ++i)
+    {
+        if(!sysNum[i])
+        {
+            //卫星数为0，说明扩展B矩阵的时候没有考虑他
+            //所以要把0钟差再作为最终结果扩展进去
+            deltaX.AddRow(clk, 3 + i);
+        }
+    }
 }
 
 void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 {
 	this->t = raw.epkObs.t;
 
-	int usfNum;//可用卫星计数
+	int usfNum{};//可用卫星计数
 	double arrB[MAXCHANNELNUM * 3] = {};//先拿出这么大来，待会再从数组里截取可用的数据下来创建矩阵
 	double arrw[MAXCHANNELNUM * 1] = {};//w矩阵
 
@@ -82,8 +66,7 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 	do
 	{
 		usfNum = 0;
-		this->gNum = 0;
-		this->bNum = 0;
+		memset(&sysNum, 0, 32);
 
 		sttnX.mat[0] += deltaX.mat[0];
 		sttnX.mat[1] += deltaX.mat[1];
@@ -95,136 +78,89 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 		{
 			int prn = raw.epkObs.satObs[i].prn;
 			raw.epkObs.satObs[i].check();
-			if (!raw.epkObs.satObs[i].valid || !prn)
+			if (!raw.epkObs.satObs[i].valid)
 				//检查双频观测值是否完整
 				continue;
 			int gi = epkGfmw.FindSatObsIndex(prn, raw.epkObs.satObs[i].sys);
-			if (gi == 114514)
+			if (gi == 114514 || !epkGfmw.gfmw[gi].valid)
 				continue;//这一历元存在粗差
-			else if (gi < raw.epkObs.satNum && gi >= 0)
-			{
-				if (!epkGfmw.gfmw[gi].valid)
-					//再次检查是否有粗差
-					continue;
-			}
-
-			if (raw.epkObs.satObs[i].sys == GNSS::GPS && raw.gpsEphem[prn - 1].prn == prn/*该卫星星历存在*/)
-			{
-				//计算信号发射时刻
-				//double transT = raw.epkObs.satObs[i].P[0] / constant::c;
-				double transT = epkGfmw.gfmw[gi].PIF / constant::c;
-				
-				GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
-				if (SatPos::Overdue(ttr, raw.gpsEphem[prn - 1]))
-					//星历过期
-					continue;
-				for (int k = 0; k < 4; k++)
-				{
-					satPos[i].CalSat(ttr, raw.gpsEphem[prn - 1]);
-					ttr = ttr - satPos[i].clkBias;
-				}
-				//计算信号传输时刻
-				double deltat1 = raw.epkObs.t - ttr - sttnClkG / constant::c;
-				
-				//地球自转改正前的卫星位置
-				XYZ satXyzk{};
-				satXyzk.x = satPos[i].satXyz.x;
-				satXyzk.y = satPos[i].satXyz.y;
-				satXyzk.z = satPos[i].satXyz.z;
-				//地球自转改正角度
-				double a = wgs84.omega * deltat1;
-				//地球自转改正后卫星位置
-				satPos[i].satXyz.x = satXyzk.x * cos(a) + satXyzk.y * sin(a);
-				satPos[i].satXyz.y = -satXyzk.x * sin(a) + satXyzk.y * cos(a);
-				satPos[i].satXyz.z = satXyzk.z;
-
-				//卫星高度角计算
-				XYZ curSttn{};
-				curSttn.x = sttnX.mat[0];
-				curSttn.y = sttnX.mat[1];
-				curSttn.z = sttnX.mat[2];
-				satPos[i].CalSatE(curSttn, wgs84);
-				if (satPos[i].eleAngle < 10.0 * constant::pi / 180 && sqrt(curSttn.x * curSttn.x + curSttn.y * curSttn.y + curSttn.z * curSttn.z) > 1e+4)
-					//xyz数值明显过小时不进行这一步判断，因为BLH会被设为0 0 0,
-					//高度角低于10度的卫星不参与解算 
-					continue;
-
-				//对流层改正
-				satPos[i].Hopefield(curSttn, wgs84);
-
-				//卫星到接收机的几何距离
-				double lx = sttnX.mat[0] - satPos[i].satXyz.x;
-				double ly = sttnX.mat[1] - satPos[i].satXyz.y;
-				double lz = sttnX.mat[2] - satPos[i].satXyz.z;
-				double range = sqrt(fabs(lx*lx + ly*ly + lz*lz));
-				//B矩阵赋值
-				arrB[usfNum * 3 + 0] = lx / range;
-				arrB[usfNum * 3 + 1] = ly / range;
-				arrB[usfNum * 3 + 2] = lz / range;
-
-				//w矩阵赋值
-				arrw[usfNum] = epkGfmw.gfmw[gi].PIF - (range + sttnX.mat[3] - constant::c * satPos[i].clkBias + satPos[i].tropDelay);
-				this->gNum++;
-				usfNum++;//可用卫星计数+1
-			}
-			else if (raw.epkObs.satObs[i].sys == GNSS::BDS && raw.bdsEphem[prn - 1].prn == prn/*该卫星星历存在*/)
-			{
-				//计算信号发射时刻
-				//double transT = raw.epkObs.satObs[i].P[0] / constant::c;
-				double transT = epkGfmw.gfmw[gi].PIF / constant::c;
-				GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
-				if (SatPos::Overdue(ttr, raw.bdsEphem[prn - 1]))
-					//星历过期
-					continue;
-				for (int k = 0; k < 4; k++)
-				{
-					satPos[i].CalSat(ttr, raw.bdsEphem[prn - 1]);
-					ttr = ttr - satPos[i].clkBias;
-				}
-				//计算信号传输时刻
-				double deltat1 = raw.epkObs.t - ttr - sttnClkB / constant::c;
-
-				//地球自转改正前的卫星位置
-				XYZ satXyzk{};
-				satXyzk.x = satPos[i].satXyz.x;
-				satXyzk.y = satPos[i].satXyz.y;
-				satXyzk.z = satPos[i].satXyz.z;
-				//地球自转改正角度
-				double a = wgs84.omega * deltat1;
-				//地球自转改正后卫星位置(地心地固坐标系)
-				satPos[i].satXyz.x = satXyzk.x * cos(a) + satXyzk.y * sin(a);
-				satPos[i].satXyz.y = -satXyzk.x * sin(a) + satXyzk.y * cos(a);
-				satPos[i].satXyz.z = satXyzk.z;
-
-				//卫星高度角计算
-				XYZ curSttn{};
-				curSttn.x = sttnX.mat[0];
-				curSttn.y = sttnX.mat[1];
-				curSttn.z = sttnX.mat[2];
-				satPos[i].CalSatE(curSttn, wgs84);
-				if (satPos[i].eleAngle < 10.0 * constant::pi / 180 && sqrt(curSttn.x * curSttn.x + curSttn.y * curSttn.y + curSttn.z * curSttn.z) > 1e+4)
-					//xyz数值明显过小时不进行这一步判断，因为BLH会被设为0 0 0,
-					//高度角低于10度的卫星不参与解算 
-					continue;
-
-				//对流层改正
-				satPos[i].Hopefield(curSttn, wgs84);
-
-				//卫星到接收机的几何距离
-				double lx = sttnX.mat[0] - satPos[i].satXyz.x;
-				double ly = sttnX.mat[1] - satPos[i].satXyz.y;
-				double lz = sttnX.mat[2] - satPos[i].satXyz.z;
-				double range = sqrt(fabs(lx * lx + ly * ly + lz * lz));
-				//B矩阵赋值
-				arrB[usfNum * 3 + 0] = lx / range;
-				arrB[usfNum * 3 + 1] = ly / range;
-				arrB[usfNum * 3 + 2] = lz / range;
-
-				//w矩阵赋值
-				arrw[usfNum] = epkGfmw.gfmw[gi].PIF - (range + sttnX.mat[4] - constant::c * satPos[i].clkBias + satPos[i].tropDelay);
-				this->bNum++;
-				usfNum++;//可用卫星计数+1
-			}
+            
+            EPHEMERIS ephem{};
+            double clk{};
+            int arrNum{};
+            if(raw.epkObs.satObs[i].sys == GNSS::GPS && raw.gpsEphem[prn - 1].prn == prn)
+            {
+                ephem = raw.gpsEphem[prn - 1];
+                clk = sttnClkG;
+                arrNum = 3;
+            }
+            else if (raw.epkObs.satObs[i].sys == GNSS::BDS && raw.bdsEphem[prn - 1].prn == prn)
+            {
+                ephem = raw.bdsEphem[prn - 1];
+                clk = sttnClkB;
+                arrNum = 4;
+            }
+            if(ephem.prn == prn/*该卫星星历存在*/)
+            {
+                //计算信号发射时刻
+                double transT = epkGfmw.gfmw[gi].PIF / constant::c;
+    
+                GPSTIME ttr = raw.epkObs.t/*观测时刻*/ - transT;//信号发射时刻
+                if (SatPos::Overdue(ttr, ephem))
+                    //星历过期
+                    continue;
+                for (int k = 0; k < 4; k++)
+                {
+                    satPos[i].CalSat(ttr, ephem);
+                    ttr = ttr - satPos[i].clkBias;
+                }
+                //计算信号传输时刻
+                double deltat1 = raw.epkObs.t - ttr - clk / constant::c;
+    
+                //地球自转改正前的卫星位置
+                XYZ satXyzk{};
+                satXyzk.x = satPos[i].satXyz.x;
+                satXyzk.y = satPos[i].satXyz.y;
+                satXyzk.z = satPos[i].satXyz.z;
+                //地球自转改正角度
+                double a = wgs84.omega * deltat1;
+                //地球自转改正后卫星位置
+                satPos[i].satXyz.x = satXyzk.x * cos(a) + satXyzk.y * sin(a);
+                satPos[i].satXyz.y = -satXyzk.x * sin(a) + satXyzk.y * cos(a);
+                satPos[i].satXyz.z = satXyzk.z;
+    
+                //卫星高度角计算
+                XYZ curSttn{};
+                curSttn.x = sttnX.mat[0];
+                curSttn.y = sttnX.mat[1];
+                curSttn.z = sttnX.mat[2];
+                satPos[i].CalSatE(curSttn, wgs84);
+                if (satPos[i].eleAngle < 10.0 * constant::pi / 180 && sqrt(curSttn.x * curSttn.x + curSttn.y * curSttn.y + curSttn.z * curSttn.z) > 1e+6)
+                    //高度角低于10度的卫星不参与解算
+                    //xyz数值明显过小时不进行这一步判断
+                    continue;
+    
+                //对流层改正
+                satPos[i].Hopefield(curSttn, wgs84);
+    
+                //卫星到接收机的几何距离
+                double lx = sttnX.mat[0] - satPos[i].satXyz.x;
+                double ly = sttnX.mat[1] - satPos[i].satXyz.y;
+                double lz = sttnX.mat[2] - satPos[i].satXyz.z;
+                double range = sqrt(fabs(lx * lx + ly * ly + lz * lz));
+                //B矩阵赋值
+                arrB[usfNum * 3 + 0] = lx / range;
+                arrB[usfNum * 3 + 1] = ly / range;
+                arrB[usfNum * 3 + 2] = lz / range;
+    
+                //w矩阵赋值
+                arrw[usfNum] = epkGfmw.gfmw[gi].PIF - (range + sttnX.mat[arrNum] - constant::c * satPos[i].clkBias + satPos[i].tropDelay);
+                if (ephem.satSys == GNSS::GPS)
+                    ++sysNum[0];
+                else if (ephem.satSys == GNSS::BDS)
+                    ++sysNum[1];
+                usfNum++;//可用卫星计数+1
+            }
 		}
 		if (usfNum < 5)//卫星数目过少，不进行定位解算
 			return;
@@ -265,17 +201,13 @@ void SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw)
 	CMatrix VTV(1, 1);
 	VTV = V.Trans() * V;
 	this->sigmaP = sqrt(VTV.mat[0] / (usfNum - 5.0));
-	this->PDOP = sqrt(BTB.Inv().mat[0] + BTB.Inv().mat[6] + BTB.Inv().mat[12]);
+    CMatrix BTBinv = BTB.Inv();
+	this->PDOP = sqrt(BTBinv.mat[0] + BTBinv.mat[6] + BTBinv.mat[12]);
 
 	//数据存储
 	this->sttnClkG = sttnX.mat[3];
 	this->sttnClkB = sttnX.mat[4];
 }
-
-
-
-
-
 
 void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 {
@@ -295,14 +227,8 @@ void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw)
 			//检查双频观测值是否完整
 			continue;
 		int gi = epkGfmw.FindSatObsIndex(prn, raw.epkObs.satObs[i].sys);
-		if (gi == 114514)
+		if (gi == 114514 || !epkGfmw.gfmw[gi].valid)
 			continue;//这一历元存在粗差
-		else if (gi < raw.epkObs.satNum && gi >= 0)
-		{
-			if (!epkGfmw.gfmw[gi].valid)
-				//再次检查是否有粗差
-				continue;
-		}
 		if (satPos[i].eleAngle < 10.0 * constant::pi / 180)
 			//高度角低于10度的卫星不参与解算
 			continue;
@@ -378,3 +304,5 @@ void SPP::CalDNEU()
 	this->dE = -sin(refBlh.L) * dXyz[0] + cos(refBlh.L) * dXyz[1];
 	this->dU = cos(refBlh.B) * cos(refBlh.L) * dXyz[0] + cos(refBlh.B) * sin(refBlh.L) * dXyz[1] + sin(refBlh.B) * dXyz[2];
 }
+
+

@@ -16,14 +16,6 @@ int EPKOBS::FindSatObsIndex(const int prn, const GNSS sys)
 	return 114514;
 }
 
-//bool BDSEPHEM::isGeo() const
-//{
-//	if ((this->satId > 0 && this->satId <= 5 )|| (this->satId >= 59 && this->satId <= 61))
-//		return true;
-//	else
-//		return false;
-//}
-
 bool EPHEMERIS::isGeo() const
 {
     if ((prn > 0 && prn <= 5 )|| (prn >= 59 && prn <= 61))
@@ -31,7 +23,6 @@ bool EPHEMERIS::isGeo() const
     else
         return false;
 }
-
 
 int CFileDecode::DecodeOem719Msg(FILE* fp)
 {

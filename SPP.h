@@ -21,15 +21,18 @@ private:
 	double sigmaV{};
 
 	double dE{}; double dN{}; double dU{};
-	int gNum{};int bNum{};
+	int sysNum[4]{};
 
 	SatPos satPos[MAXCHANNELNUM];
 public:
 	friend class Client;
 	void ExtendMatB(CMatrix& B, int total) const;//将设计矩阵B根据GPS以及BDS卫星数目情况进行扩展
 	void ExtendDeltaX(CMatrix& deltaX) const;//将deltaX根据GPS以及BDS卫星数目情况进行扩展
+ 
 	void StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw);//单点定位
-	void StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw);//单点测速
+    void StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw);//单点测速
+    
+    
 	void CalDNEU();//计算测站在NEU系下的定位误差
 
 	void check();

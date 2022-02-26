@@ -420,9 +420,12 @@ CMatrix CMatrix::Trans() const
 
 void CMatrix::AddRow(double* vec, int aimRow)
 {
-	if (aimRow > this->rows || aimRow < 0)
+	if (aimRow > this->rows)
 		//最多在数组最下面一行多扩展一行
-		return;
+        aimRow = this->rows;
+    if(aimRow < 0)
+		aimRow = 0;
+  
 	CMatrix temp(this->rows + 1, this->cols);
 	memcpy(temp.mat, this->mat, aimRow * this->cols * 8);
 	for (int i = 0; i < temp.cols; i++)

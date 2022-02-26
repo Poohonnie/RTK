@@ -30,6 +30,5 @@ public:
 	friend class Client;
 	friend class SPP;
 	void DetectOutlier(RAWDATA raw);//´Ö²îÌ½²âÁ÷³Ì
- 
 };
 

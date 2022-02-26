@@ -47,7 +47,7 @@ int Client::Run()
 			spp.StdPntPos(socketDecode->raw, detectOutlier.curEpk);
 			spp.StdPntVel(socketDecode->raw, detectOutlier.curEpk);
 			spp.CalDNEU();
-			printf("%4d %9.3f  %11.4f  %11.4f  %11.4f  %11.8f  %11.8f %10.3f %6.3f %6.3f %6.3f %10.4f %10.4f %10.4f  %5.3f %5.3f %5.3f %d %d %d\n", spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z, spp.sttnBlh.B * 180.0 / constant::pi, spp.sttnBlh.L * 180.0 / constant::pi, spp.sttnBlh.H, spp.dE, spp.dN, spp.dU, spp.sttnV[0], spp.sttnV[1], spp.sttnV[2], spp.PDOP, spp.sigmaP, spp.sigmaV, spp.gNum, spp.bNum, spp.bNum + spp.gNum);
+			printf("%4d %9.3f  %11.4f  %11.4f  %11.4f  %11.8f  %11.8f %10.3f %6.3f %6.3f %6.3f %10.4f %10.4f %10.4f  %5.3f %5.3f %5.3f %d %d %d\n", spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z, spp.sttnBlh.B * 180.0 / constant::pi, spp.sttnBlh.L * 180.0 / constant::pi, spp.sttnBlh.H, spp.dE, spp.dN, spp.dU, spp.sttnV[0], spp.sttnV[1], spp.sttnV[2], spp.PDOP, spp.sigmaP, spp.sigmaV, spp.sysNum[0], spp.sysNum[1], spp.sysNum[0] + spp.sysNum[1]);
 			//fprintf(outFp, "%4d %9.3f %11.4f %11.4f %11.4f %11.8f %11.8f %10.3f %6.3f %6.3f %6.3f %10.4f %10.4f %10.4f  %5.3f %5.3f %5.3f %d %d %d\n", spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z, spp.sttnBlh.B * 180.0 / constant::pi, spp.sttnBlh.L * 180.0 / constant::pi, spp.sttnBlh.H, spp.dE, spp.dN, spp.dU, spp.sttnV[0], spp.sttnV[1], spp.sttnV[2], spp.PDOP, spp.sigmaP, spp.sigmaV, spp.gNum, spp.bNum, spp.bNum + spp.gNum);
 		}
 
@@ -76,7 +76,7 @@ int Client::FileSpp()
 			spp.StdPntPos(fileDecode->raw, detectOutlier.curEpk);
 			spp.StdPntVel(fileDecode->raw, detectOutlier.curEpk);
 			spp.CalDNEU();
-			printf("%4d %9.3f  %11.4f  %11.4f  %11.4f  %11.8f  %11.8f %10.3f %6.3f %6.3f %6.3f %10.4f %10.4f %10.4f  %5.3f %5.3f %5.3f %d %d %d\n", spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z, spp.sttnBlh.B * 180.0 / constant::pi, spp.sttnBlh.L * 180.0 / constant::pi, spp.sttnBlh.H, spp.dE, spp.dN, spp.dU, spp.sttnV[0], spp.sttnV[1], spp.sttnV[2], spp.PDOP, spp.sigmaP, spp.sigmaV, spp.gNum, spp.bNum, spp.bNum + spp.gNum);
+			printf("%4d %9.3f  %11.4f  %11.4f  %11.4f  %11.8f  %11.8f %10.3f %6.3f %6.3f %6.3f %10.4f %10.4f %10.4f  %5.3f %5.3f %5.3f %d %d %d\n", spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z, spp.sttnBlh.B * 180.0 / constant::pi, spp.sttnBlh.L * 180.0 / constant::pi, spp.sttnBlh.H, spp.dE, spp.dN, spp.dU, spp.sttnV[0], spp.sttnV[1], spp.sttnV[2], spp.PDOP, spp.sigmaP, spp.sigmaV, spp.sysNum[0], spp.sysNum[1], spp.sysNum[0] + spp.sysNum[1]);
 			//fprintf(outFp, "%4d %9.3f %11.4f %11.4f %11.4f %11.8f %11.8f %7.3f %6.3f %6.3f %5.3f %5.3f %d %d %d\n", spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z, spp.sttnBlh.B * 180.0 / constant::pi, spp.sttnBlh.L * 180.0 / constant::pi, spp.sttnBlh.H, spp.sttnClkG, spp.sttnClkB, spp.PDOP, spp.sigmaP, spp.gNum, spp.bNum, spp.bNum + spp.gNum);
 		}
 	}
