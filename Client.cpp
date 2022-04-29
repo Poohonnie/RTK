@@ -12,13 +12,13 @@
 void Client::SetConfig()
 {
     config.posMode = 1;  // 0:SPP 1:RTK
-    config.iptStream = 0;  // 0:file 1:server
+    config.iptStream = 1;  // 0:file 1:server
     config.elmin = 10 * constant::D2R;  // 高度角阈值 10°
     config.ratioThres = 3.0;  // ratio值阈值 3.0
-//    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-2.bin)");  // 流动站文件
-//    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-1.bin)");  // 基站文件
-    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.bin)");  // 流动站文件
-    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\3.4-basedata-novatel.bin)");  // 基站文件
+    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-2.bin)");  // 流动站文件
+    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-1.bin)");  // 基站文件
+//    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.bin)");  // 流动站文件
+//    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\3.4-basedata-novatel.bin)");  // 基站文件
     
     strcpy(config.iptIP[0], "47.114.134.129");  // 流动站IP地址
     strcpy(config.iptIP[1], "47.114.134.129");  // 基站IP地址
@@ -178,7 +178,7 @@ int Client::FileRTK()
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
 //    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-2.pos)", "w");
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.pos)", "w");
+//    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.pos)", "w");
     double dtime{};
     int epoch{};
     while (true)
@@ -243,27 +243,29 @@ int Client::FileRTK()
             default:
                 break;
         }
-        if(rtk.sol == 2)  // 本历元成功固定
-        {
-            ++epoch;
-            totalXyz = totalXyz + rtk.pos;  // 坐标值综合, 方便下面求平均
-            refXyz.x = totalXyz.x / epoch;  // 固定解平均值作为参考坐标
-            refXyz.y = totalXyz.y / epoch;
-            refXyz.z = totalXyz.z / epoch;
-        }
-        if(epoch < 1)  // 还没有固定解出现
-            continue;
+//        if(rtk.sol == 2)  // 本历元成功固定
+//        {
+//            ++epoch;
+//            totalXyz = totalXyz + rtk.pos;  // 坐标值综合, 方便下面求平均
+//            refXyz.x = totalXyz.x / epoch;  // 固定解平均值作为参考坐标
+//            refXyz.y = totalXyz.y / epoch;
+//            refXyz.z = totalXyz.z / epoch;
+//        }
+//        if(epoch < 1)  // 还没有固定解出现
+//            continue;
         printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
                rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
                dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
                rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
+/*
         fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
                 rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
                 dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
                 rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
+*/
     }
     
-    fclose(outFp);
+//    fclose(outFp);
     return 0;
 }
 
@@ -273,19 +275,19 @@ int Client::ServerRTK()
     int curLen[2]{};  // 此次接收到的报文总长度
     unsigned char buf[2][204800]{};
     CSocketDecode socketDecode[2]{};  // 解码类
-    std::queue<CSocketDecode> roverDecode;  // 流动站观测值raw队列
-    std::queue<CSocketDecode> baseDecode;  // 基准站观测值raw队列
+    std::queue<CSocketDecode> roverDecode{};  // 流动站观测值raw队列
+    std::queue<CSocketDecode> baseDecode{};  // 基准站观测值raw队列
     CSocketDecode lastBase{};  // 上一历元的基准站数据
     CDetectOutlier detectOutlier[2]{};  // 粗差探测类
-    SOCKET sock[2];  // 套接字
-    RTK rtk;  // RTK类
+    SOCKET sock[2]{};  // 套接字
+    RTK rtk{};  // RTK类
     unsigned short port[2] = {7180, 7190};  // 端口 0: 流动站 1: 基站
-    port[0] = 7200;  // 短基线
-    int val;  // 解码返回值
+//    port[0] = 7200;  // 短基线
+    int val[2]{};  // 解码返回值
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
     
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202204292047.oem719.rtk.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202204292210.oem719.rtk.pos)", "w");
     
     if (!CSocketDecode::OpenSocket(sock[0], config.iptIP[0], port[0]))
     {
@@ -314,70 +316,67 @@ int Client::ServerRTK()
             printf("Please check out the network.\n");
             return -114514;
         }
-        val = socketDecode[0].DecodeOem719Msg(buf[0], curLen[0], lenRem[0]);  // 网络接收到的报文解码
-        if (val == 43)
+        val[0] = socketDecode[0].DecodeOem719Msg(buf[0], curLen[0], lenRem[0]);  // 网络接收到的报文解码
+        val[1] = socketDecode[1].DecodeOem719Msg(buf[1], curLen[1], lenRem[1]);  // 网络接收到的报文解码
+        if (val[0] == 43 && val[1] == 43)
         {
-            val = socketDecode[1].DecodeOem719Msg(buf[1], curLen[1], lenRem[1]);  // 网络接收到的报文解码
-            if (val == 43)
+            dtime = socketDecode[0].t - socketDecode[1].t;  // 时间间隔
+            if (fabs(dtime) > 10.0)
+                continue;  // 基准站数据与流动站时间差太多
+            // 星历复制
+            for (int i = 0; i < MAXGPSNUM; ++i)
+                socketDecode[0].raw.gpsEphem[i] = socketDecode[1].raw.gpsEphem[i];
+            for (int i = 0; i < MAXBDSNUM; ++i)
+                socketDecode[0].raw.bdsEphem[i] = socketDecode[1].raw.bdsEphem[i];
+            // RTK定位解算
+            // 观测值粗差探测
+            detectOutlier[0].DetectOutlier(socketDecode[0].raw);
+            detectOutlier[1].DetectOutlier(socketDecode[1].raw);
+    
+            rtk.CalFixedSolution(socketDecode[0].raw, socketDecode[1].raw,
+                                 detectOutlier[0].curEpk, detectOutlier[1].curEpk, config);
+            if (!rtk.valid)  // 定位结果异常
+                continue;
+    
+            // 输出解算结果
+            XYZ dXyz = rtk.pos - refXyz;
+            double line = sqrt(dXyz.x * dXyz.x + dXyz.y * dXyz.y + dXyz.z * dXyz.z);
+            double dNEU[3]{};
+            CalDNEU(refXyz, rtk.pos, dNEU);
+            char sol[50]{};  // 解的类型
+            switch (rtk.sol)
             {
-                dtime = socketDecode[0].t - socketDecode[1].t;  // 时间间隔
-                if (fabs(dtime) > 10.0)
-                    continue;  // 基准站数据与流动站时间差太多
-                // 星历复制
-                for (int i = 0; i < MAXGPSNUM; ++i)
-                    socketDecode[0].raw.gpsEphem[i] = socketDecode[1].raw.gpsEphem[i];
-                for (int i = 0; i < MAXBDSNUM; ++i)
-                    socketDecode[0].raw.bdsEphem[i] = socketDecode[1].raw.bdsEphem[i];
-                // RTK定位解算
-                // 观测值粗差探测
-                detectOutlier[0].DetectOutlier(socketDecode[0].raw);
-                detectOutlier[1].DetectOutlier(socketDecode[1].raw);
-                
-                rtk.CalFixedSolution(socketDecode[0].raw, socketDecode[1].raw,
-                                     detectOutlier[0].curEpk, detectOutlier[1].curEpk, config);
-                if (!rtk.valid)  // 定位结果异常
-                    continue;
-                
-                // 输出解算结果
-                XYZ dXyz = rtk.pos - refXyz;
-                double line = sqrt(dXyz.x * dXyz.x + dXyz.y * dXyz.y + dXyz.z * dXyz.z);
-                double dNEU[3]{};
-                CalDNEU(refXyz, rtk.pos, dNEU);
-                char sol[50]{};  // 解的类型
-                switch (rtk.sol)
-                {
-                    case 0:  // 单点解
-                        strcpy(sol, "Single");
-                        break;
-                    case 1:  // 浮点解
-                        strcpy(sol, "Float");
-                        break;
-                    case 2:  // 固定解
-                        strcpy(sol, "Fixed");
-                        break;
-                    default:
-                        break;
-                }
-                if(rtk.sol == 2)  // 本历元成功固定
-                {
-                    ++epoch;
-                    totalXyz = totalXyz + rtk.pos;  // 坐标值综合, 方便下面求平均
-                    refXyz.x = totalXyz.x / epoch;  // 固定解平均值作为参考坐标
-                    refXyz.y = totalXyz.y / epoch;
-                    refXyz.z = totalXyz.z / epoch;
-                }
-                if(epoch < 1)  // 还没有固定解出现
-                    continue;
-                printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
-                       rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-                       dXyz.x, dXyz.y, dXyz.z, line,
-                       rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-                fprintf(outFp,
-                        "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
-                        rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-                        dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
-                        rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
+                case 0:  // 单点解
+                    strcpy(sol, "Single");
+                    break;
+                case 1:  // 浮点解
+                    strcpy(sol, "Float");
+                    break;
+                case 2:  // 固定解
+                    strcpy(sol, "Fixed");
+                    break;
+                default:
+                    break;
             }
+//                if(rtk.sol == 2)  // 本历元成功固定
+//                {
+//                    ++epoch;
+//                    totalXyz = totalXyz + rtk.pos;  // 坐标值综合, 方便下面求平均
+//                    refXyz.x = totalXyz.x / epoch;  // 固定解平均值作为参考坐标
+//                    refXyz.y = totalXyz.y / epoch;
+//                    refXyz.z = totalXyz.z / epoch;
+//                }
+//                if(epoch < 1)  // 还没有固定解出现
+//                    continue;
+            printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
+                   rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
+                   dXyz.x, dXyz.y, dXyz.z, line,
+                   rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
+            fprintf(outFp,
+                    "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
+                    rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
+                    dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
+                    rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
         }
     }
 

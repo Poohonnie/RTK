@@ -386,7 +386,7 @@ int RTK::CalFixedSolution(RAWDATA& roverRaw, RAWDATA& baseRaw, EPKGFMW& rEpkGfmw
         }
         
         ratio = resAmb[0] > 0.0 ? resAmb[1] / resAmb[0] : 1.0;  // ratio 值
-        ratio = ratio > 999.0 ? 999.0 : ratio;  // 大于999.0设为999.0
+        ratio = ratio > 999.99 ? 999.99 : ratio;  // 大于999.0设为999.0
         if (ratio < 2.0)
         {
             // 考虑是否有半周问题
