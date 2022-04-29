@@ -302,18 +302,3 @@ void SPP::check()
 		memset(this, 0, sizeof(SPP));
 	}
 }
-
-void SPP::CalDNEU(const XYZ &refXyz)
-{
-    BLH refBlh = XYZ2BLH(refXyz, wgs84);
-    double dXyz[3]{};
-    dXyz[0] = this->sttnXyz.x - refXyz.x;
-    dXyz[1] = this->sttnXyz.y - refXyz.y;
-    dXyz[2] = this->sttnXyz.z - refXyz.z;
-    
-    this->dN = -sin(refBlh.B) * cos(refBlh.L) * dXyz[0] - sin(refBlh.B) * sin(refBlh.L) * dXyz[1]
-               + cos(refBlh.B) * dXyz[2];
-    this->dE = -sin(refBlh.L) * dXyz[0] + cos(refBlh.L) * dXyz[1];
-    this->dU = cos(refBlh.B) * cos(refBlh.L) * dXyz[0] + cos(refBlh.B) * sin(refBlh.L) * dXyz[1]
-               + sin(refBlh.B) * dXyz[2];
-}

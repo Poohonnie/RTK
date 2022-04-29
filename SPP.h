@@ -19,10 +19,7 @@ private:
     
     double sttnV[3]{};
     double sigmaV{};
-    
-    double dE{};
-    double dN{};
-    double dU{};
+
     int sysNum[4]{};
     
     EpkPos epkPos;  // 卫星位置数据
@@ -40,6 +37,5 @@ public:
     int StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config);  // 单点定位
     void StdPntVel(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config);  // 单点测速
     
-    void CalDNEU(const XYZ &refXyz);  // 计算测站在NEU系下的定位误差
     void check();
 };

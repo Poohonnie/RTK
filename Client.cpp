@@ -15,8 +15,8 @@ void Client::SetConfig()
     config.iptStream = 1;  // 0:file 1:server
     config.elmin = 10 * constant::D2R;  // 高度角阈值 10°
     config.ratioThres = 3.0;  // ratio值阈值 3.0
-    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-2.bin)");
-    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-1.bin)");
+    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-2.bin)");  // 流动站文件
+    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-1.bin)");  // 基站文件
     strcpy(config.iptIP[0], "47.114.134.129");  // 流动站IP地址
     strcpy(config.iptIP[1], "47.114.134.129");  // 基站IP地址
     
@@ -75,16 +75,17 @@ int Client::FileSPP()
         detectOutlier.DetectOutlier(fileDecode.raw);
         spp.StdPntPos(fileDecode.raw, detectOutlier.curEpk, config);
         spp.StdPntVel(fileDecode.raw, detectOutlier.curEpk, config);
-        spp.CalDNEU(refXyz);
+        double dNEU[3]{};
+        CalDNEU(refXyz, spp.sttnXyz, dNEU);
         printf("%4d %9.3f %12.4f %12.4f %12.4f %11.8f %11.8f %7.3f %6.3f %6.3f %6.3f %7.4f %7.4f %7.4f %5.3f %5.3f %5.3f %3d %3d %3d\n",
                spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z,
                spp.sttnBlh.B * constant::R2D, spp.sttnBlh.L * constant::R2D, spp.sttnBlh.H,
-               spp.dE, spp.dN, spp.dU, spp.sttnV[0], spp.sttnV[1], spp.sttnV[2],
+               dNEU[0], dNEU[1], dNEU[2], spp.sttnV[0], spp.sttnV[1], spp.sttnV[2],
                spp.PDOP, spp.sigmaP, spp.sigmaV, spp.sysNum[0], spp.sysNum[1], spp.sysNum[0] + spp.sysNum[1]);
         /*fprintf(outFp, "%4d %9.3f %12.4f %12.4f %12.4f %11.8f %11.8f %7.3f %6.3f %6.3f %6.3f %7.4f %7.4f %7.4f %5.3f %5.3f %5.3f %3d %3d %3d\n",
                spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z,
                spp.sttnBlh.B * constant::R2D, spp.sttnBlh.L * constant::R2D, spp.sttnBlh.H,
-               spp.dE, spp.dN, spp.dU, spp.sttnV[0], spp.sttnV[1], spp.sttnV[2],
+               dNEU[0], dNEU[1], dNEU[2], spp.sttnV[0], spp.sttnV[1], spp.sttnV[2],
                spp.PDOP, spp.sigmaP, spp.sigmaV, spp.sysNum[0], spp.sysNum[1], spp.sysNum[0] + spp.sysNum[1]);*/
     }
     //fclose(outFp);
@@ -138,11 +139,12 @@ int Client::ServerSPP()
             detectOutlier.DetectOutlier(socketDecode->raw);
             spp.StdPntPos(socketDecode->raw, detectOutlier.curEpk, config);
             spp.StdPntVel(socketDecode->raw, detectOutlier.curEpk, config);
-            spp.CalDNEU(refXyz);
+            double dNEU[3]{};
+            CalDNEU(refXyz, spp.sttnXyz, dNEU);
             printf("%4d %9.3f  %11.4f  %11.4f  %11.4f  %11.8f  %11.8f %10.3f %6.3f %6.3f %6.3f %10.4f %10.4f %10.4f  %5.3f %5.3f %5.3f %d %d %d\n",
                    spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z,
                    spp.sttnBlh.B * constant::R2D, spp.sttnBlh.L * constant::R2D, spp.sttnBlh.H,
-                   spp.dE, spp.dN, spp.dU, spp.sttnV[0], spp.sttnV[1], spp.sttnV[2],
+                   dNEU[0], dNEU[1], dNEU[2], spp.sttnV[0], spp.sttnV[1], spp.sttnV[2],
                    spp.PDOP, spp.sigmaP, spp.sigmaV, spp.sysNum[0], spp.sysNum[1], spp.sysNum[0] + spp.sysNum[1]);
             /*fprintf(outFp, "%4d %9.3f %11.4f %11.4f %11.4f %11.8f %11.8f %7.3f %6.3f %6.3f %5.3f %5.3f %d %d %d\n",
                     spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z, spp.sttnBlh.B * constant::R2D,
@@ -167,19 +169,20 @@ int Client::FileRTK()
     
     CFileDecode lastBase{};  // 上一历元的基准站数据
     int flag[2]{};
-    
-//    FILE *outFp = fopen("testOutput.pos", "w");
-    
+    XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-2.pos)", "w");
+    double dtime{};
     while (true)
     {
+        dtime = 0;
         flag[0] = fileDecode[0].DecodeOem719Msg();  // 先解码流动站, 以流动站时间为基准
         if (flag[0] == -114514)  // 读到文件结尾，退出程序
             break;
         if (flag[0] != 43)  // CRC校验失败, 该历元不进行解算
             continue;
         // 流动站文件解码成功
-        double dtime = fileDecode[0].raw.epkObs.t - lastBase.raw.epkObs.t;  // 流动站数据和基准站数据之间的时间差
-    
+        dtime = fileDecode[0].raw.epkObs.t - lastBase.raw.epkObs.t;  // 流动站数据和基准站数据之间的时间差
+        
         while (dtime > 0.5)  // 一直读到超前于流动站当前历元的数据 或者时间差在0.5秒之内时停下(0.5秒内停下就是同历元)
         {
             flag[1] = fileDecode[1].DecodeOem719Msg();  // 解码基准站数据
@@ -197,23 +200,24 @@ int Client::FileRTK()
             lastBase = fileDecode[1];  // 将该历元基准站数据保存起来, 作为下一历元的lastBase
         if (dtime < 0)
             continue;  // 读到来自未来的基准站数据
-            
+        
         // RTK定位解算
         // 观测值粗差探测
         detectOutlier[0].DetectOutlier(fileDecode[0].raw);
         detectOutlier[1].DetectOutlier(fileDecode[1].raw);
-    
+        
         rtk.CalFixedSolution(fileDecode[0].raw, fileDecode[1].raw,
                              detectOutlier[0].curEpk, detectOutlier[1].curEpk, config);
         if (!rtk.valid)  // 定位结果异常
             continue;
-    
+        
         // 输出解算结果
-        XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632}/*rtk.spp[1].sttnXyz*/;
         XYZ dXyz = rtk.pos - refXyz;
-    
+        double line = sqrt(dXyz.x * dXyz.x + dXyz.y * dXyz.y + dXyz.z * dXyz.z);
+        double dNEU[3]{};
+        CalDNEU(refXyz, rtk.pos, dNEU);
         char sol[50]{};  // 解的类型
-        switch(rtk.sol)
+        switch (rtk.sol)
         {
             case 0:  // 单点解
                 strcpy(sol, "Single");
@@ -227,17 +231,17 @@ int Client::FileRTK()
             default:
                 break;
         }
-        printf("%4d %10.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
-               rtk.t.week, rtk.t.secOfWeek, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-               dXyz.x, dXyz.y, dXyz.z, rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-/*
-        fprintf(outFp, "%4d %10.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %2d\n",
-               rtk.t.week, rtk.t.secOfWeek, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-               dXyz.x, dXyz.y, dXyz.z, rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
-*/
+        printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
+               rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
+               dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
+               rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
+        fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
+                rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
+                dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
+                rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
     }
     
-//    fclose(outFp);
+    fclose(outFp);
     return 0;
 }
 
@@ -313,7 +317,9 @@ int Client::ServerRTK()
     
                 // 输出解算结果
                 XYZ dXyz = rtk.pos - refXyz;
-    
+                double line = sqrt(dXyz.x * dXyz.x + dXyz.y * dXyz.y + dXyz.z * dXyz.z);
+                double dNEU[3]{};
+                CalDNEU(refXyz, rtk.pos, dNEU);
                 char sol[50]{};  // 解的类型
                 switch(rtk.sol)
                 {
@@ -329,12 +335,14 @@ int Client::ServerRTK()
                     default:
                         break;
                 }
-                printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
+                printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
                        rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-                       dXyz.x, dXyz.y, dXyz.z, rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-                fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
-                       rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-                       dXyz.x, dXyz.y, dXyz.z, rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
+                       dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
+                       rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
+                fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
+                        rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
+                        dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
+                        rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
             }
         }
     }

@@ -133,6 +133,8 @@ BLH XYZ2BLH(const XYZ&, const CoorSys&);
 
 double Deg2Rad(double deg, double min, double sec);
 
+void CalDNEU(const XYZ &refXyz, const XYZ &sttnXyz, double *dNEU);  // 计算测站在NEU系下的定位误差
+
 /*********************************************************************
  *                              矩阵
  *********************************************************************/

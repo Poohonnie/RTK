@@ -102,3 +102,18 @@ BLH XYZ2BLH(const XYZ& xyz, const CoorSys& coorSys)
     
     return blh;
 }
+
+void CalDNEU(const XYZ &refXyz, const XYZ &sttnXyz, double *dNEU)
+{
+    BLH refBlh = XYZ2BLH(refXyz, wgs84);
+    double dXyz[3]{};
+    dXyz[0] = sttnXyz.x - refXyz.x;
+    dXyz[1] = sttnXyz.y - refXyz.y;
+    dXyz[2] = sttnXyz.z - refXyz.z;
+    
+    dNEU[0] = -sin(refBlh.B) * cos(refBlh.L) * dXyz[0] - sin(refBlh.B) * sin(refBlh.L) * dXyz[1]
+              + cos(refBlh.B) * dXyz[2];
+    dNEU[1] = -sin(refBlh.L) * dXyz[0] + cos(refBlh.L) * dXyz[1];
+    dNEU[2] = cos(refBlh.B) * cos(refBlh.L) * dXyz[0] + cos(refBlh.B) * sin(refBlh.L) * dXyz[1]
+              + sin(refBlh.B) * dXyz[2];
+}
