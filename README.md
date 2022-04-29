@@ -6,3 +6,5 @@ Real Time Kenimatic 实时相对定位
 程序入口为class Client
 
 更改client.config的参数即可进入不同程序, 包括对数据文件的SPP和RTK 以及 网络通信数据的SPP和RTK, 具体看代码注释
+
+注意文件编码均为UTF-8
