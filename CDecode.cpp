@@ -1,17 +1,29 @@
+#include "lib.h"
+#include <cmath>
+#include <fstream>
+#include <winsock2.h>
 #include "CDecode.h"
 
-void SATOBS::check()
+bool SATOBS::check()
 {
-	if (fabs(P[0]) < 1.0e-5 || fabs(P[1]) < 1.0e-5 || fabs(L[0]) < 1.0e-5 || fabs(L[1]) < 1.0e-5 || fabs(D[0]) < 1.0e-5 || fabs(D[1]) < 1.0e-5 )
-		valid = false;
+    if (fabs(P[0]) < 1.0e-5 || fabs(P[1]) < 1.0e-5 || fabs(L[0]) < 1.0e-5 || fabs(L[1]) < 1.0e-5 ||
+        fabs(D[0]) < 1.0e-5 || fabs(D[1]) < 1.0e-5 || !valid)
+    {
+        valid = false;
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 int EPKOBS::FindSatObsIndex(const int prn, const GNSS sys)
 {
-	for (int i = 0; i < MAXCHANNELNUM; i++)
+	for (int i = 0; i < MAXCHANNELNUM; ++i)
 	{
 		if ((satObs[i].prn == prn && satObs[i].sys == sys) || satObs[i].prn == 0)
-			return i;//·µ»ØËùÕÒµ½µÄsatObsÊı×éÏÂ±ê »ò ·µ»Ø¿ÕsatObsÏÂ±ê
+			return i;  // è¿”å›æ‰€æ‰¾åˆ°çš„satObsæ•°ç»„ä¸‹æ ‡ æˆ– è¿”å›ç©ºsatObsä¸‹æ ‡
 	}
 	return 114514;
 }
@@ -24,21 +36,30 @@ bool EPHEMERIS::isGeo() const
         return false;
 }
 
-int CFileDecode::DecodeOem719Msg(FILE* fp)
+int CFileDecode::DecodeOem719Msg()
 {
-	unsigned char buf[10240];//»º³åÇø
-	memset(buf, 0, 10240);//³õÊ¼»¯
+    /*
+     * OEM719äºŒè¿›åˆ¶æ•°æ®æµè§£ç å‡½æ•°(æ–‡ä»¶è§£ç )
+     *
+     * è¿”å›å€¼:
+     * -114514: åˆ°è¾¾æ–‡ä»¶æœ«å°¾
+     * -1: CRCæ ¡éªŒé”™è¯¯
+     * 43: è¯»å–åˆ°è§‚æµ‹å€¼æ–‡ä»¶
+     *
+     */
+	unsigned char buf[10240];  // ç¼“å†²åŒº
+	memset(buf, 0, 10240);  // åˆå§‹åŒ–
 	int msgId, lenth;
 
 	while (true)
 	{
-		//ÕÒÆğÊ¼±ê¼Ç AA 44 12
-		while (true)//´òÆÆÌõ¼şÔÚÑ­»·¿éÄÚ²¿
+		//æ‰¾èµ·å§‹æ ‡è®° AA 44 12
+		while (true)//æ‰“ç ´æ¡ä»¶åœ¨å¾ªç¯å—å†…éƒ¨
 		{
 			if (fread(buf + 2, sizeof(unsigned char), 1, fp) < 1)
 				return -114514;
 			if (buf[0] == 0xAA && buf[1] == 0x44 && buf[2] == 0x12)
-				//ÕÒµ½ÆğÊ¼Èı¸ö×Ö½ÚÔòÌø³öÑ­»·
+				//æ‰¾åˆ°èµ·å§‹ä¸‰ä¸ªå­—èŠ‚åˆ™è·³å‡ºå¾ªç¯
 				break;
 			else
 			{
@@ -46,25 +67,25 @@ int CFileDecode::DecodeOem719Msg(FILE* fp)
 				buf[1] = buf[2];
 			}
 		}
-		//ÕÒµ½ÆğÊ¼×Ö½ÚºóÔòÍùºó¶ÁÈ¡25bytes Ò»Ö±¶ÁÍêbuf + 27
+		//æ‰¾åˆ°èµ·å§‹å­—èŠ‚ååˆ™å¾€åè¯»å–25bytes ä¸€ç›´è¯»å®Œbuf + 27
 		if (fread(buf + 3, sizeof(unsigned char), 25, fp) < 25)
 			return -114514;
 
-		lenth = U2(buf + 8);//Message lenth
-		msgId = U2(buf + 4);//Message ID
+		lenth = U2(buf + 8);  // Message lenth
+		msgId = U2(buf + 4);  // Message ID
 		this->t.week = U2(buf + 14);
 		this->t.secOfWeek = U4(buf + 16) * 1e-3;
 
-		if (fread(buf + 28/*´ÓÕıÎÄ¿ªÊ¼¶Á*/, sizeof(unsigned char), lenth + 4/*ÕıÎÄÒÔ¼°32Î»CRCÂë*/, fp) < lenth + 4)
+		if (fread(buf + 28/*ä»æ­£æ–‡å¼€å§‹è¯»*/, sizeof(unsigned char), lenth + 4/*æ­£æ–‡ä»¥åŠ32ä½CRCç */, fp) < lenth + 4)
 			return -114514;
-		//Êı¾İ¶ÁÈ¡½áÊø
+		//æ•°æ®è¯»å–ç»“æŸ
 
 		if (crc32(buf, lenth + 28) != U4(buf + 28 + lenth))
 		{
-			printf_s("CRCĞ£ÑéÎ´Í¨¹ı\n");
-			return 0;
+			printf("CRC examination failed.\n");
+			return -1;
 		}
-		//crc32Ğ£ÑéÍ¨¹ıÔò¸ù¾İmsgID½øĞĞÏÂÒ»²½½âÂë
+		//crc32æ ¡éªŒé€šè¿‡åˆ™æ ¹æ®msgIDè¿›è¡Œä¸‹ä¸€æ­¥è§£ç 
 		switch (msgId)
 		{
 		case 43:
@@ -72,7 +93,7 @@ int CFileDecode::DecodeOem719Msg(FILE* fp)
 			DecodeOem719Obs(buf);
 			return 43;
 		case 42:
-			//PSRPOS
+			//BESTPOS
 			DecodeOem719Bestpos(buf);
 			break;
 		case 7:
@@ -91,28 +112,28 @@ int CFileDecode::DecodeOem719Msg(FILE* fp)
 
 void CDecode::DecodeOem719Obs(unsigned char* buf)
 {
-	unsigned char* H = buf + 28;//Í·ÎÄ¼ş½áÊø£¬ÕıÎÄÆğÊ¼
-	memset(&this->raw.epkObs, 0, sizeof(EPKOBS));
+	unsigned char* H = buf + 28;  // å¤´æ–‡ä»¶ç»“æŸï¼Œæ­£æ–‡èµ·å§‹
+	memset(&this->raw.epkObs, 0, sizeof(EPKOBS));  // è§‚æµ‹å€¼åˆå§‹åŒ–
 	double obsNum = U4(H);
-	unsigned char* p = H + 4;//Ã¿¶Î¹Û²âÖµµÄÆğÊ¼Ö¸Õë H+44¾ÍÊÇp+40
+	unsigned char* p = H + 4;  // æ¯æ®µè§‚æµ‹å€¼çš„èµ·å§‹æŒ‡é’ˆ H+44å°±æ˜¯p+40
 
-	int chTrStatus;//µÚ12ĞĞ ch-tr-status
-	int sigType;//Signal Type
-	int sysn;//Satellite System
-	GNSS sys;//Satellite SystemµÄ¾ßÌåÃû³Æ
-	unsigned short prn;//ÎÀĞÇprnºÅ
-	int freq;//SATOBSÆµÂÊÏÂ±ê 0£¬1
-	int n;//satObsµÄÏÂ±ê
-	double wl;//wavelength
+	int chTrStatus;  // ç¬¬12è¡Œ ch-tr-status
+	int sigType;  // Signal Type
+	int sysn;  // Satellite System
+	GNSS sys;  // Satellite Systemçš„å…·ä½“åç§°
+	unsigned short prn;  // å«æ˜Ÿprnå·
+	int freq;  // SATOBSé¢‘ç‡ä¸‹æ ‡ 0ï¼Œ1
+	int n;  // satObsçš„ä¸‹æ ‡
+	double wl;  // wavelength
 
-	for (int i = 0; i < obsNum; i++, p += 44)
+	for (int i = 0; i < obsNum; ++i, p += 44)
 	{
 		prn = U2(p);
-		chTrStatus = U4(p + 40);
+		chTrStatus = (int) U4(p + 40);
 		int lockedFlag{};
 		lockedFlag = chTrStatus >> 12 & 0x01;
 		if (lockedFlag == 0)
-			continue;//Õâ¸öÀúÔªµÄÊı¾İÎ´±»Ëø¶¨£¬²»¿É¿¿£¬Ö±½ÓÌø¹ı
+			continue;  // è¿™ä¸ªå†å…ƒçš„æ•°æ®æœªè¢«é”å®šï¼Œä¸å¯é ï¼Œç›´æ¥è·³è¿‡
 
 		sigType = chTrStatus >> 21 & 0x1F;
 		sysn = chTrStatus >> 16 & 0x07;
@@ -129,7 +150,7 @@ void CDecode::DecodeOem719Obs(unsigned char* buf)
 				freq = 1;
 				wl = constant::c / 1227.60e+6;
 			}
-			else continue;//signal type³öÎÊÌâÁËÊôÓÚÊÇ
+			else continue;  // signal typeå‡ºé—®é¢˜äº†å±äºæ˜¯
 		}
 		else if (sysn == 4)
 		{
@@ -145,29 +166,32 @@ void CDecode::DecodeOem719Obs(unsigned char* buf)
 				wl = constant::c / 1268.52e+6;
 			}
 			else
-				continue;//signal type³öÎÊÌâÁËÊôÓÚÊÇ
+				continue;  // signal typeå‡ºé—®é¢˜äº†å±äºæ˜¯
 		}
 		else
-			continue;//ÎÀĞÇÀàĞÍ²»ÎªGPS»òBDSÖĞµÄÈÎÒâÒ»¸ö
+			continue;  // å«æ˜Ÿç±»å‹ä¸ä¸ºGPSæˆ–BDSä¸­çš„ä»»æ„ä¸€ä¸ª
 
-		n = raw.epkObs.FindSatObsIndex(prn, sys);//ÕÒµ½¹Û²âÊı¾İÔÚstaObsÊı×éÖĞµÄ´æ´¢Î»ÖÃ
+		n = raw.epkObs.FindSatObsIndex(prn, sys);  // æ‰¾åˆ°è§‚æµ‹æ•°æ®åœ¨staObsæ•°ç»„ä¸­çš„å­˜å‚¨ä½ç½®
 		raw.epkObs.satObs[n].prn = prn;
 		raw.epkObs.satObs[n].sys = sys;
 
 		raw.epkObs.satObs[n].P[freq] = R8(p + 4);
 
-		raw.epkObs.satObs[n].L[freq] = -wl * R8(p + 16);//Òª³Ë-1£¬²»È»ºóÃæÍ¨²»¹ı
+		raw.epkObs.satObs[n].L[freq] = -wl * R8(p + 16);  // è¦ä¹˜-1ï¼Œä¸ç„¶åé¢é€šä¸è¿‡
 
 		raw.epkObs.satObs[n].D[freq] = R4(p + 28);
-		raw.epkObs.satObs[n].valid = true;
+        raw.epkObs.satObs[n].CN0Ratio = R4(p + 32);
+        raw.epkObs.satObs[n].locktime = R4(p + 36);
+        raw.epkObs.satObs[n].halfCycle = chTrStatus >> 28 & 0x01;
+        raw.epkObs.satObs[n].valid = true;
 	}
-	raw.epkObs.t = t;//¹Û²âÊı¾İÊ±¼ä
-	raw.epkObs.satNum = raw.epkObs.FindSatObsIndex(-1, GNSS::GPS);//È·¶¨epkObsÀïËùº¬µÄÎÀĞÇÊıÄ¿
+	raw.epkObs.t = t;  // è§‚æµ‹æ•°æ®æ—¶é—´
+	raw.epkObs.satNum = raw.epkObs.FindSatObsIndex(-1, GNSS::GPS);  // ç¡®å®šepkObsé‡Œæ‰€å«çš„å«æ˜Ÿæ•°ç›®
 }
 
 void CDecode::DecodeOem719GpsEphem(unsigned char* buf)
 {
-	unsigned char* H = buf + 28;//Í·ÎÄ¼ş½áÊø£¬ÕıÎÄÆğÊ¼
+	unsigned char* H = buf + 28;  // å¤´æ–‡ä»¶ç»“æŸï¼Œæ­£æ–‡èµ·å§‹
 	unsigned long prn = U4(H);
     
     raw.gpsEphem[prn - 1].satSys = GNSS::GPS;
@@ -199,7 +223,7 @@ void CDecode::DecodeOem719GpsEphem(unsigned char* buf)
 
 void CDecode::DecodeOem719BdsEphem(unsigned char* buf)
 {
-	unsigned char* H = buf + 28;//Í·ÎÄ¼ş½áÊø£¬ÕıÎÄÆğÊ¼
+	unsigned char* H = buf + 28;  // å¤´æ–‡ä»¶ç»“æŸï¼Œæ­£æ–‡èµ·å§‹
 	unsigned long prn = U4(H);
     
     raw.bdsEphem[prn - 1].satSys = GNSS::BDS;
@@ -230,12 +254,12 @@ void CDecode::DecodeOem719BdsEphem(unsigned char* buf)
 
 void CDecode::DecodeOem719Bestpos(unsigned char* buf)
 {
-	//¹Û²âÊı¾İÊ±¼ä
+	//è§‚æµ‹æ•°æ®æ—¶é—´
 	raw.bestPos.time = t;
 
-	unsigned char* H = buf + 28;//Í·ÎÄ¼ş½áÊø£¬ÕıÎÄÆğÊ¼
-	raw.bestPos.blh.B = R8(H + 8);
-	raw.bestPos.blh.L = R8(H + 16);
+	unsigned char* H = buf + 28;  // å¤´æ–‡ä»¶ç»“æŸï¼Œæ­£æ–‡èµ·å§‹
+	raw.bestPos.blh.B = R8(H + 8) * constant::D2R;
+	raw.bestPos.blh.L = R8(H + 16) * constant::D2R;
 	raw.bestPos.blh.H = R8(H + 24);
 }
 
@@ -244,7 +268,7 @@ unsigned int CDecode::crc32(const unsigned char* buf, int lenth)
 {
 	unsigned int crc = 0;
 
-	for (int i = 0; i < lenth; i++)
+	for (int i = 0; i < lenth; ++i)
 	{
 		crc ^= buf[i];
 		for (int j = 0; j < 8; j++)
@@ -287,69 +311,68 @@ double CDecode::R8(unsigned char* buf)
 	return val;
 }
 
-FILE* CFileDecode::FileRead(const char* fileName)
+void CFileDecode::FileRead(const char* fileName)
 {
-	FILE* fp;
 	fopen_s(&fp, fileName, "rb");
 	if (fp == nullptr)
 	{
-		printf("Cannot open OEM719 file. \n");
+		printf("Cannot open OEM719 file.\n");
 		std::abort();
 	}
-	else
-	{
-		return fp;
-	}
+}
+
+CFileDecode::~CFileDecode()
+{
+    fclose(fp);
 }
 
 int CSocketDecode::DecodeOem719Msg(unsigned char* buf, int curLen, int& lenRem)
 {
 	int i = 0, val = 0;
-	int len = curLen + lenRem;//¿É¶Á±¨ÎÄ×Ü³¤¶È
-	unsigned char Buff[10240];//µ¥¸öÏûÏ¢»º³åÇø
+	int len = curLen + lenRem;  // å¯è¯»æŠ¥æ–‡æ€»é•¿åº¦
+	unsigned char Buff[10240];  // å•ä¸ªæ¶ˆæ¯ç¼“å†²åŒº
 	int msgId, msgLen;
 
 	while (true)
 	{
-		for (; i < len - 3; i++)
+		for (; i < len - 3; ++i)
 		{
 			if (buf[i] == 0xAA && buf[i + 1] == 0x44 && buf[i + 2] == 0x12)
-			{
-				break;   //ÕÒµ½Ìø³ö£¬½øĞĞºóÃæµÄ¶ÁÈ¡¡£
-			}
-			//·ñÔòÑ­»·ÕÒµ½AA4412ÎªÖ¹ 178 68 18
+				break;   //æ‰¾åˆ°è·³å‡ºï¼Œè¿›è¡Œåé¢çš„è¯»å–ã€‚
+			//å¦åˆ™å¾ªç¯æ‰¾åˆ°AA4412ä¸ºæ­¢ 178 68 18
 		}
-		if (i + 28 <= len)
-		{
-			//ËµÃ÷´Ë¶Î±¨ÎÄÊ£ÏÂµÄÄÚÈİ´óĞ¡´óÓÚµÈÓÚÒ»¸öÍ·ÎÄ¼ş
+		if (i + 28 <= len)  // è¯´æ˜æ­¤æ®µæŠ¥æ–‡å‰©ä¸‹çš„å†…å®¹å¤§å°å¤§äºç­‰äºä¸€ä¸ªå¤´æ–‡ä»¶
+        {
 			msgLen = U2(buf + i + 8);
 		}
-		else
+		else  // è¯´æ˜æ­¤æ®µæŠ¥æ–‡å‰©ä¸‹çš„å†…å®¹å¤§å°ä¸è¶³ä¸€ä¸ªå¤´æ–‡ä»¶
 		{
-			lenRem = len - i;//¿É¶ÁÄÚÈİËõ¼õµ½ÖÁ´ËÒÔÇ°µÄÎ»ÖÃ
+			lenRem = len - i;  // å¯è¯»å†…å®¹ç¼©å‡åˆ°è‡³æ­¤ä»¥å‰çš„ä½ç½®
 			memcpy(buf, buf + i, lenRem);
 			memset(buf + lenRem, 0, 204800 - lenRem);
-			break;//ÍË³ö¸Ã´Î±¨ÎÄ½âÂë
+            val = -114514;
+            break;  // é€€å‡ºè¯¥æ¬¡æŠ¥æ–‡è§£ç 
 		}
 
-		if (i + msgLen + 28 + 4 <= len)
+		if (i + msgLen + 28 + 4 <= len)  // æ­¤æ®µæŠ¥æ–‡å‰©ä¸‹å†…å®¹å¤§äºç­‰äºä¸€ä¸ªå®Œæ•´æ¶ˆæ¯
 		{
-			//´Ë¶Î±¨ÎÄÊ£ÏÂÄÚÈİ´óÓÚµÈÓÚÒ»¸öÍêÕûÏûÏ¢
-			memcpy(Buff, buf + i, msgLen + 28 + 4);//½»¸øÏûÏ¢»º³åÇø×¼±¸½âÂë
+			memcpy(Buff, buf + i, msgLen + 28 + 4);  // äº¤ç»™æ¶ˆæ¯ç¼“å†²åŒºå‡†å¤‡è§£ç 
 			i += msgLen + 28 + 4;
 		}
 		else
 		{
-			lenRem = len - i;//Ê£ÏÂÄÚÈİ´æÆğÀ´;
+			lenRem = len - i;  // å‰©ä¸‹å†…å®¹å­˜èµ·æ¥;
 			memcpy(buf, buf + i, lenRem);
-			break;
+            val = -114514;
+            break;
 		}
-		//CRCĞ£Ñé
+		// CRCæ ¡éªŒ
 		if (crc32(Buff, msgLen + 28) != U4(Buff + msgLen + 28))
 		{
 			lenRem = len - i;
 			memcpy(buf, buf + i, len - i);
-			return -114514;
+			val = -114514;
+            break;
 		}
 
 		this->t.week = U2(Buff + 14);
@@ -357,7 +380,7 @@ int CSocketDecode::DecodeOem719Msg(unsigned char* buf, int curLen, int& lenRem)
 
 		msgId = U2(Buff + 4);
 
-		//crc32Ğ£ÑéÍ¨¹ıÔò¸ù¾İmsgID½øĞĞÏÂÒ»²½½âÂë
+		//crc32æ ¡éªŒé€šè¿‡åˆ™æ ¹æ®msgIDè¿›è¡Œä¸‹ä¸€æ­¥è§£ç 
 		switch (msgId)
 		{
 		case 43:
@@ -372,21 +395,25 @@ int CSocketDecode::DecodeOem719Msg(unsigned char* buf, int curLen, int& lenRem)
 		//BESTPOS
 		{
 			DecodeOem719Bestpos(Buff);
+            val = 42;
 			break;
 		}
 		case 7:
 		//GPSEPHEM
 		{
 			DecodeOem719GpsEphem(Buff);
+            val = 7;
 			break;
 		}
 		case 1696:
 		//BDSEPHEMERIS
 		{
 			DecodeOem719BdsEphem(Buff);
+            val = 1696;
 			break;
 		}
 		default:
+            val = 0;
 			break;
 		}
 	}

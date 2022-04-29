@@ -1,17 +1,16 @@
 cmake_minimum_required(VERSION 3.21)
-project(SPP)
+project(RTK)
 
 set(CMAKE_CXX_STANDARD 14)
 link_libraries(ws2_32)
 include_directories(include)
-add_executable(SPP
+add_executable(RTK
         main.cpp
-        CMatrix.h   CMatrix.cpp
-        lib.h
-        TimeConv.cpp
-        CoorConv.cpp
+        lib.h CMatrix.cpp TimeConv.cpp CoorConv.cpp
         CDecode.h   CDecode.cpp
-        SatPos.h SatPos.cpp
-        CDetectOutlier.h    CDetectOutlier.cpp
+        SatPos.h    SatPos.cpp
+        Detect.h Detect.cpp
         SPP.h   SPP.cpp
-        Client.h    Client.cpp)
+        Client.h    Client.cpp
+        lambda.cpp
+        RTK.cpp RTK.h SDObs.cpp SDObs.h)

@@ -1,14 +1,14 @@
 ﻿#include <iostream>
-#include <cstdlib>
 #include <iomanip>
 #include <cmath>
-#include "CMatrix.h"
+#include <cstring>
+#include "lib.h"
 
 CMatrix::CMatrix() :
 	mat(nullptr), 
 	rows(0), 
 	cols(0)
-{};//默认构造函数
+{}  // 默认构造函数
 
 CMatrix::CMatrix(const double* arr, int Rows, int Cols)
 {
@@ -17,7 +17,7 @@ CMatrix::CMatrix(const double* arr, int Rows, int Cols)
 	{
 		this->rows = Rows; this->cols = Cols;
 		this->mat = new double[Rows * Cols];
-		for (int i = 0; i < Rows * Cols; i++)
+		for (int i = 0; i < Rows * Cols; ++i)
 		{
 			this->mat[i] = arr[i];
 		}
@@ -28,7 +28,7 @@ CMatrix::CMatrix(const double* arr, int Rows, int Cols)
 		this->cols = 0;
 		this->mat = nullptr;
 	}
-};//构造函数
+}  // 构造函数
 
 CMatrix::CMatrix(int Rows, int Cols)
 {
@@ -39,10 +39,7 @@ CMatrix::CMatrix(int Rows, int Cols)
 	{
 		this->rows = Rows; this->cols = Cols;
 		this->mat = new double[this->rows * this->cols];
-		for (int i = 0; i < this->rows * this->cols; i++)
-		{
-			this->mat[i] = 0;
-		}
+		memset(this->mat, 0, Rows * Cols * sizeof(double));
 	}
 	else
 	{
@@ -57,10 +54,10 @@ CMatrix::CMatrix(const CMatrix& orig)
 	/*********************************
 	*			拷贝构造函数
 	*********************************/
-	this->cols = orig.cols;//copy列的数目
-	this->rows = orig.rows;//copy行的数目
-	this->mat = new double[orig.cols * orig.rows];//为CMatrix类变量中的mat数组开辟一块内存，大小与orig中的数组大小一致
-	memcpy(mat, orig.mat, this->cols * this->rows * sizeof(double));//数组复制
+	this->cols = orig.cols;  // copy列的数目
+	this->rows = orig.rows;  // copy行的数目
+	this->mat = new double[orig.cols * orig.rows];  // 为CMatrix类变量中的mat数组开辟一块内存，大小与orig中的数组大小一致
+	memcpy(mat, orig.mat, this->cols * this->rows * sizeof(double));  // 数组复制
 }
 
 CMatrix::~CMatrix()
@@ -73,33 +70,49 @@ CMatrix CMatrix::Eye(int n)
 	if (n)
 	{
 		CMatrix eye(n, n);
-		for (int i = 0; i < n; i++)
+		for (int i = 0; i < n; ++i)
 			eye.mat[i * n + i] = 1;
 		return eye;
 	}
 	else
 	{
-        double arr[1] = {0};
+        double arr[1]{};
         CMatrix matrix(arr, 1, 1);
         return matrix;
 	}
 }
 
+CMatrix CMatrix::Zeros(int m, int n)
+{
+    if(m > 0 && n > 0)
+    {
+        CMatrix zeros(m, n);  // 构造一个全零的矩阵
+        return zeros;
+    }
+    else
+    {
+        CMatrix mat(1, 1);  // 如果m, n不符合要求, 则返回一个1*1的矩阵
+        return mat;
+    }
+}
+
 void CMatrix::Show() const
 {
-	for (int i = 0; i < this->rows; i++)
+	for (int i = 0; i < this->rows; ++i)
 	{
 		for (int j = 0; j < this->cols; j++)
 		{
-			std::cout << this->Read(i, j) << ' ';
+            std::cout << std::setw(9) << std::setiosflags(std::ios::fixed)
+                      << std::setprecision(4) << this->Read(i, j) << ' ';
 		}
 		std::cout << std::endl;
 	}
+    printf("\n");
 }
 
 void CMatrix::Show(int m, int n) const
 {
-	for (int i = 0; i < this->rows; i++)
+	for (int i = 0; i < this->rows; ++i)
 	{
 		for (int j = 0; j < this->cols; j++)
 		{
@@ -108,11 +121,12 @@ void CMatrix::Show(int m, int n) const
 		}
 		std::cout << std::endl;
 	}
+    printf("\n");
 }
 
 void CMatrix::Write(double val, int m, int n) const
 {
-	if (m <= this->rows && n <= this->cols && this->mat)
+	if (m <= rows && n <= cols && this->mat)
 	{
 		// m, n 均在矩阵范围内
 		this->mat[m * cols + n] = val;
@@ -120,35 +134,23 @@ void CMatrix::Write(double val, int m, int n) const
 	else
 	{
 		std::cout << "序号不在矩阵范围内" << std::endl;
-		std::abort();
 	}
 }
 
 double CMatrix::Read(int m, int n) const
 {
-	if (m <= this->rows && n <= this->cols)
-		return this->mat[m * this->cols + n];
-	else
-		return -114514.0;
-}
-
-bool CMatrix::isSquare() const
-{
-	if (this->mat != nullptr)
-	{
-		if (this->rows == this->cols)
-			return true;//方阵行列数相等
-		else
-			return false;
-		return false;
-	}
-	else
-		return false;
+    if (m <= this->rows && n <= this->cols)
+        return this->mat[m * this->cols + n];
+    else
+    {
+        std::cout << "读取矩阵数据错误"  << std::endl;
+        return -114514.0;
+    }
 }
 
 void CMatrix::check() const
 {
-	for (int i = 0; i < this->cols * this->rows; i++)
+	for (int i = 0; i < this->cols * this->rows; ++i)
 	{
 		if (fabs(this->mat[i]) < 1e-15)
 			this->mat[i] = 0;
@@ -163,8 +165,8 @@ CMatrix CMatrix::operator+(const CMatrix& addMat/*被加矩阵*/) const
 	if (this->rows == addMat.rows && this->cols == addMat.cols)
 	{
 		//矩阵维数一致才可以进行加法运算
-		CMatrix sumMatrix(this->rows, this->cols);//声明一个和矩阵
-		for (int i = 0; i < this->rows * this->cols; i++)
+		CMatrix sumMatrix(this->rows, this->cols);  // 声明一个和矩阵
+		for (int i = 0; i < this->rows * this->cols; ++i)
 		{
 			sumMatrix.mat[i] = this->mat[i] + addMat.mat[i];
 		}
@@ -182,8 +184,8 @@ CMatrix CMatrix::operator-(const CMatrix& subMat/*减数矩阵*/) const
 	if (this->rows == subMat.rows && this->cols == subMat.cols)
 	{
 		//矩阵维数一致才可以进行减法运算
-		CMatrix differenceMatrix(this->rows, this->cols);//声明一个差矩阵
-		for (int i = 0; i < this->rows * this->cols; i++)
+		CMatrix differenceMatrix(this->rows, this->cols);  // 声明一个差矩阵
+		for (int i = 0; i < this->rows * this->cols; ++i)
 		{
 			differenceMatrix.mat[i] = this->mat[i] - subMat.mat[i];
 		}
@@ -195,14 +197,16 @@ CMatrix CMatrix::operator-(const CMatrix& subMat/*减数矩阵*/) const
 
 CMatrix& CMatrix::operator=(const CMatrix& orig)
 {
-	/*********************************
-	*			拷贝构造函数
-	*********************************/
-	this->cols = orig.cols;//copy列的数目
-	this->rows = orig.rows;//copy行的数目
-	this->mat = new double[orig.cols * orig.rows];//为CMatrix类变量中的mat数组开辟一块内存，大小与orig中的数组大小一致
-	memcpy(mat, orig.mat, this->cols * this->rows * sizeof(double));//数组复制
-	return *this;
+    /*********************************
+    *			拷贝构造函数
+    *********************************/
+    if (this == &orig)  // 身份检测
+        return *this;
+    this->cols = orig.cols;  // copy列的数目
+    this->rows = orig.rows;  // copy行的数目
+    this->mat = new double[orig.cols * orig.rows];  // 为CMatrix类变量中的mat数组开辟一块内存，大小与orig中的数组大小一致
+    memcpy(mat, orig.mat, this->cols * this->rows * sizeof(double));  // 数组复制
+    return *this;
 }
 
 CMatrix& CMatrix::operator+=(const CMatrix& addMat)
@@ -210,7 +214,7 @@ CMatrix& CMatrix::operator+=(const CMatrix& addMat)
 	if (this->rows == addMat.rows && this->cols == addMat.cols)
 	{
 		//矩阵维数一致才可以进行加法运算
-		for (int i = 0; i < this->rows * this->cols; i++)
+		for (int i = 0; i < this->rows * this->cols; ++i)
 		{
 			this->mat[i] += addMat.mat[i];
 		}
@@ -225,7 +229,7 @@ CMatrix& CMatrix::operator-=(const CMatrix& subMat)
 	if (this->rows == subMat.rows && this->cols == subMat.cols)
 	{
 		//矩阵维数一致才可以进行减法运算
-		for (int i = 0; i < this->rows * this->cols; i++)
+		for (int i = 0; i < this->rows * this->cols; ++i)
 		{
 			this->mat[i] -= subMat.mat[i];
 		}
@@ -244,10 +248,10 @@ CMatrix CMatrix::operator*(const CMatrix& multiplierMat/*乘数矩阵*/) const
 	if (this->cols == multiplierMat.rows)
 	{
 		//确认左矩阵的列数与右矩阵的行数是否一致
-		CMatrix productMatrix(this->rows, multiplierMat.cols);//声明一个积矩阵
+		CMatrix productMatrix(this->rows, multiplierMat.cols);  // 声明一个积矩阵
 		int m = this->rows; int n = this->cols; int p = multiplierMat.cols;
 		//实际上这里循环顺序并不重要，对于一维数组来说顺序读取和抽样读取速度差异不大
-		for (int i = 0; i < m; i++)
+		for (int i = 0; i < m; ++i)
 			for (int j = 0; j < n; j++)
 				for (int k = 0; k < p; k++)
 				{
@@ -262,12 +266,12 @@ CMatrix CMatrix::operator*(const CMatrix& multiplierMat/*乘数矩阵*/) const
 CMatrix CMatrix::operator*(const double num) const
 {
 	CMatrix result(*this);
-	for (int i = 0; i < result.cols * result.rows; i++)
+	for (int i = 0; i < result.cols * result.rows; ++i)
 		result.mat[i] = num * result.mat[i];
 	return result;
 }
 
-CMatrix CMatrix::Inv()
+CMatrix CMatrix::Inv() const
 {
 	/***************************************************
 	*				高斯约当法矩阵求逆
@@ -288,7 +292,7 @@ CMatrix CMatrix::Inv()
 	for (k = 0; k < n; k++)
 	{
 		d = 0.0;
-		for (i = k; i < n; i++)   /* 查找右下角方阵中主元素的位置 */
+		for (i = k; i < n; ++i)   /* 查找右下角方阵中主元素的位置 */
 		{
 			for (j = k; j < n; j++)
 			{
@@ -322,7 +326,7 @@ CMatrix CMatrix::Inv()
 
 		if (js[k] != k)  /* 对主元素所在的列与右下角方阵的首列进行调换 */
 		{
-			for (i = 0; i < n; i++)
+			for (i = 0; i < n; ++i)
 			{
 				u = i * n + k;
 				v = i * n + js[k];
@@ -342,7 +346,7 @@ CMatrix CMatrix::Inv()
 				b[u] = b[u] * b[l];
 			}
 		}
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; ++i)
 		{
 			if (i != k)
 			{
@@ -356,7 +360,7 @@ CMatrix CMatrix::Inv()
 				}
 			}
 		}
-		for (i = 0; i < n; i++)
+		for (i = 0; i < n; ++i)
 		{
 			if (i != k)
 			{
@@ -381,7 +385,7 @@ CMatrix CMatrix::Inv()
 		}
 		if (is[k] != k)
 		{
-			for (i = 0; i < n; i++)
+			for (i = 0; i < n; ++i)
 			{
 				u = i * n + k;
 				v = is[k] + i * n;
@@ -412,13 +416,20 @@ CMatrix CMatrix::Trans() const
 	************************/
 	int m = this->rows, n = this->cols;
 	CMatrix transMat(n, m);
-	for (int i = 0; i < m; i++)
+	for (int i = 0; i < m; ++i)
 		for (int j = 0; j < n; j++)
-			transMat.mat[j * m + i] = this->mat[i * n + j];//原矩阵 i 行 j 列元素赋值到转置矩阵中 j 行 i 列处
+			transMat.mat[j * m + i] = this->mat[i * n + j];  // 原矩阵 i 行 j 列元素赋值到转置矩阵中 j 行 i 列处
 	return transMat;
 }
 
-void CMatrix::AddRow(double* vec, int aimRow)
+void CMatrix::SetZero() const
+{
+    for(int i = 0; i < rows; ++i)
+        for(int j = 0; j < cols; ++j)
+            this->Write(0, i, j);
+}
+
+void CMatrix::AddRow(double* vec, int aimRow)  // 这个函数是错的! 请使用AddRow_2
 {
 	if (aimRow > this->rows)
 		//最多在数组最下面一行多扩展一行
@@ -426,23 +437,48 @@ void CMatrix::AddRow(double* vec, int aimRow)
     if(aimRow < 0)
 		aimRow = 0;
   
-	CMatrix temp(this->rows + 1, this->cols);
+	CMatrix temp(this->rows + 1, this->cols);  // 全0
 	memcpy(temp.mat, this->mat, aimRow * this->cols * 8);
-	for (int i = 0; i < temp.cols; i++)
+	for (int i = 0; i < temp.cols; ++i)
 	{
 		if(fabs(vec[i]) < 1e+60)
 			temp.mat[aimRow * temp.cols + i] = vec[i];
 		else
 			temp.mat[aimRow * temp.cols + i] = 0;
 	}
-	memcpy(temp.mat + (aimRow + 1) * temp.cols, this->mat + aimRow * this->cols, (this->rows - aimRow) * this->cols * 8);//将剩下的数复制进来
+	memcpy(temp.mat + (aimRow + 1) * temp.cols, this->mat + aimRow * this->cols, (this->rows - aimRow) * this->cols * 8);  // 将剩下的数复制进来
 	*this = temp;
 }
 
-void CMatrix::AddCol(double* vec, int aimCol)
+void CMatrix::AddCol(double* vec, int aimCol)  // 这个函数是错的! 请使用AddCol_2
 {
 	CMatrix temp = this->Trans();
 	temp.AddRow(vec, aimCol);
 	*this = temp.Trans();
 }
+
+void CMatrix::SubRow(int aimRow/*去掉第几行*/)
+{
+    if (rows < 1)  // 矩阵一行都没有
+        return;
+    if (aimRow > rows)  // 最多去掉最后一行
+        aimRow = rows;
+    if (aimRow < 0)  // 小于0的话改成0
+        aimRow = 0;
+    
+    CMatrix temp(mat, rows - 1, cols);  // 先把前一部分复制过来, 后一部分下面加上去
+    memcpy(temp.mat + aimRow * temp.cols, mat + (aimRow + 1) * cols,
+           (rows - aimRow - 1) * cols * sizeof(double));  // 将剩下的数复制进来
+    *this = temp;
+}
+
+
+void CMatrix::SubCol(int aimCol/*去掉第几列*/)
+{
+    CMatrix temp = this->Trans();
+    temp.SubRow(aimCol);
+    *this = temp.Trans();
+}
+
+
 

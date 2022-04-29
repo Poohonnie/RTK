@@ -1,4 +1,5 @@
 #include "lib.h"
+#include <cmath>
 
 double SoWSubtraction(double t, double toc)
 {
@@ -12,17 +13,17 @@ double SoWSubtraction(double t, double toc)
 
 double CommonTime2UT(const COMMONTIME& commonTime)
 {
-	/*ÒÔĞ¡Ê±Îªµ¥Î»µÄUT*/
+	/*ä»¥å°æ—¶ä¸ºå•ä½çš„UT*/
 	double UT = commonTime.hour + commonTime.minute / 60.0 + commonTime.second / 3600.0;
 	return UT;
 }
 
 MJDTIME CommonTime2MjdTime(const COMMONTIME& commonTime)
 {
-	//Í¨ÓÃÊ±×ª¼ò»¯ÈåÂÔÈÕ
+	//é€šç”¨æ—¶è½¬ç®€åŒ–å„’ç•¥æ—¥
 	MJDTIME mjdTime{};
-	int y;//Äê
-	int m;//ÔÂ
+	int y;  // å¹´
+	int m;  // æœˆ
 	if (commonTime.month <= 2)
 	{
 		y = commonTime.year - 1;
@@ -33,32 +34,32 @@ MJDTIME CommonTime2MjdTime(const COMMONTIME& commonTime)
 		y = commonTime.year;
 		m = commonTime.month;
 	}
-	double MJD = int(365.25 * y) + int(30.6001 * (m + 1)) + commonTime.day + CommonTime2UT(commonTime) / 24 + 1720981.5 - 2400000.5;//PPT1-4µÚ 9 Ò³MJD¼ÆËã¹«Ê½£¬µ¥Î»²»³öÒâÍâÓ¦¸ÃÎª Ìì
+	double MJD = int(365.25 * y) + int(30.6001 * (m + 1)) + commonTime.day + CommonTime2UT(commonTime) / 24 + 1720981.5 - 2400000.5;  // PPT1-4ç¬¬ 9 é¡µMJDè®¡ç®—å…¬å¼ï¼Œå•ä½ä¸å‡ºæ„å¤–åº”è¯¥ä¸º å¤©
 	mjdTime.day = int(MJD);
-	mjdTime.fracDay = MJD - int(MJD);//mjdTime µÄĞ¡Êı²¿·Ö£¬µ¥Î»ÎªÌì
-	mjdTime.secOfDay = commonTime.hour * 3600.0 + commonTime.minute * 60.0 + commonTime.second;//mjdTime Ò»ÌìÖĞµÄ¾ßÌåÃëÊı
+	mjdTime.fracDay = MJD - int(MJD);  // mjdTime çš„å°æ•°éƒ¨åˆ†ï¼Œå•ä½ä¸ºå¤©
+	mjdTime.secOfDay = commonTime.hour * 3600.0 + commonTime.minute * 60.0 + commonTime.second;  // mjdTime ä¸€å¤©ä¸­çš„å…·ä½“ç§’æ•°
 	return mjdTime;
 }
 
 COMMONTIME MjdTime2CommonTime(const MJDTIME& mjdTime)
 {
-	//¼ò»¯ÈåÂÔÈÕ×ªÍ¨ÓÃÊ±
-	COMMONTIME commonTime{};//×÷Îª·µ»ØÖµ
-	int a, b, c, d, e;//×ª»»ÖĞ¼ä²ÎÊı£¬¼ûPPT 1-4 µÚ 10 Ò³
+	//ç®€åŒ–å„’ç•¥æ—¥è½¬é€šç”¨æ—¶
+	COMMONTIME commonTime{};  // ä½œä¸ºè¿”å›å€¼
+	int a, b, c, d, e;  // è½¬æ¢ä¸­é—´å‚æ•°ï¼Œè§PPT 1-4 ç¬¬ 10 é¡µ
 	double JD = mjdTime.day + mjdTime.fracDay + 2400000.5;
 	a = lround(JD + 0.5); b = a + 1537;
 	c = int((b - 122.1) / 365.25);
 	d = int(365.25 * c);
 	e = int((b - d) / 30.6001);
-	double D = b - d - int(30.6001 * e) + JD + 0.5 - lround(JD + 0.5);//ÖĞ¼ä²ÎÊıÒ»ÄêÖĞµÄÈÕ£¬µ¥Î»Ìì
-	int M = e - 1 - 12 * int(e / 14);//ÔÂ
-	int Y = c - 4715 - int((M + 7) / 10);//Äê
+	double D = b - d - int(30.6001 * e) + JD + 0.5 - lround(JD + 0.5);  // ä¸­é—´å‚æ•°ä¸€å¹´ä¸­çš„æ—¥ï¼Œå•ä½å¤©
+	int M = e - 1 - 12 * int(e / 14);  // æœˆ
+	int Y = c - 4715 - int((M + 7) / 10);  // å¹´
 
-	commonTime.day = (unsigned short)D;//DÈ¡Õû
+	commonTime.day = (unsigned short)D;  // Då–æ•´
 
-	commonTime.hour = (unsigned short)(mjdTime.secOfDay / 3600.0);//ÃëÊı³ıÒÔ3600ÔÙÈ¡Õû£¬µÃĞ¡Ê±Êı
-	commonTime.minute = (unsigned short)((mjdTime.secOfDay - commonTime.hour * 3600.0) / 60.0);//Ò»Ğ¡Ê±ÄÚÊ£ÓàÃëÊı³ıÒÔ60È¡Õû£¬µÃ·ÖÖÓÊı
-	commonTime.second = mjdTime.secOfDay - commonTime.hour * 3600.0 - commonTime.minute * 60.0;//ÃëÊı
+	commonTime.hour = (unsigned short)(mjdTime.secOfDay / 3600.0);  // ç§’æ•°é™¤ä»¥3600å†å–æ•´ï¼Œå¾—å°æ—¶æ•°
+	commonTime.minute = (unsigned short)((mjdTime.secOfDay - commonTime.hour * 3600.0) / 60.0);  // ä¸€å°æ—¶å†…å‰©ä½™ç§’æ•°é™¤ä»¥60å–æ•´ï¼Œå¾—åˆ†é’Ÿæ•°
+	commonTime.second = mjdTime.secOfDay - commonTime.hour * 3600.0 - commonTime.minute * 60.0;  // ç§’æ•°
 
 	commonTime.month = (unsigned char)M;
 	commonTime.year = short(Y);
@@ -68,27 +69,27 @@ COMMONTIME MjdTime2CommonTime(const MJDTIME& mjdTime)
 
 GPSTIME MjdTime2GpsTime(const MJDTIME& mjdTime)
 {
-	//¼ò»¯ÈåÂÔÈÕ×ªGPSÊ±
+	//ç®€åŒ–å„’ç•¥æ—¥è½¬GPSæ—¶
 	GPSTIME gpsTime{};
 	gpsTime.week = (unsigned short)((mjdTime.day - 44244) / 7);
-	gpsTime.secOfWeek = int(mjdTime.day - 44244 - int((mjdTime.day - 44244) / 7) * 7)/*ÕâÊÇËã³öGPSÖÜÄÚÌìÊıµÄÕûÊı²¿·Ö*/ * 86400 + mjdTime.secOfDay;
+	gpsTime.secOfWeek = int(mjdTime.day - 44244 - int((mjdTime.day - 44244) / 7) * 7)/*è¿™æ˜¯ç®—å‡ºGPSå‘¨å†…å¤©æ•°çš„æ•´æ•°éƒ¨åˆ†*/ * 86400 + mjdTime.secOfDay;
 	return gpsTime;
 }
 
 MJDTIME GpsTime2MjdTime(const GPSTIME& gpsTime)
 {
-	//GPSÊ±×ª¼ò»¯ÈåÂÔÈÕ
+	//GPSæ—¶è½¬ç®€åŒ–å„’ç•¥æ—¥
 	MJDTIME mjdTime{};
 	mjdTime.day = 44244 + gpsTime.week * 7 + int(gpsTime.secOfWeek / 86400);
 	mjdTime.fracDay = fmod(gpsTime.secOfWeek, 86400.0) / 86400.0;
-	/*gpsTime.secOfWeek / 86400 - int(gpsTime.secOfWeek / 86400); ¿ÉÓÃÉÏÃæ´úÂëÌæ»»*/
+	/*gpsTime.secOfWeek / 86400 - int(gpsTime.secOfWeek / 86400); å¯ç”¨ä¸Šé¢ä»£ç æ›¿æ¢*/
 	mjdTime.secOfDay = gpsTime.secOfWeek - int(gpsTime.secOfWeek / 86400) * 86400.0;
 	return mjdTime;
 }
 
 GPSTIME CommonTime2GpsTime(const COMMONTIME& commonTime)
 {
-	//Í¨ÓÃÊ±×ªGPSÊ±
+	//é€šç”¨æ—¶è½¬GPSæ—¶
 	MJDTIME mjdTime = CommonTime2MjdTime(commonTime);
 	GPSTIME gpsTime = MjdTime2GpsTime(mjdTime);
 	return gpsTime;
@@ -96,7 +97,7 @@ GPSTIME CommonTime2GpsTime(const COMMONTIME& commonTime)
 
 COMMONTIME GpsTime2CommonTime(const GPSTIME& gpsTime)
 {
-	//GPSÊ±×ªÍ¨ÓÃÊ±
+	//GPSæ—¶è½¬é€šç”¨æ—¶
 	MJDTIME mjdTime = GpsTime2MjdTime(gpsTime);
 	COMMONTIME commonTime = MjdTime2CommonTime(mjdTime);
 	return commonTime;
@@ -104,7 +105,7 @@ COMMONTIME GpsTime2CommonTime(const GPSTIME& gpsTime)
 
 BDSTIME GpsTime2BdsTime(const GPSTIME& gpsTime)
 {
-	//GPSÊ± ×ª ±±¶·Ê±
+	//GPSæ—¶ è½¬ åŒ—æ–—æ—¶
 	BDSTIME bdsTime{};
 	bdsTime.week = gpsTime.week - 1356;
 	bdsTime.secOfWeek = gpsTime.secOfWeek - 14.0;
@@ -114,7 +115,7 @@ BDSTIME GpsTime2BdsTime(const GPSTIME& gpsTime)
 
 GPSTIME BdsTime2GpsTime(const BDSTIME& bdsTime)
 {
-	//±±¶·Ê± ×ª GPSÊ±
+	//åŒ—æ–—æ—¶ è½¬ GPSæ—¶
 	GPSTIME gpsTime{};
 	gpsTime.week = bdsTime.week + 1356;
 	gpsTime.secOfWeek = bdsTime.secOfWeek + 14.0;
@@ -124,7 +125,7 @@ GPSTIME BdsTime2GpsTime(const BDSTIME& bdsTime)
 
 BDSTIME MjdTime2BdsTime(const MJDTIME& mjdTime)
 {
-	//¼ò»¯ÈåÂÔÈÕ×ªBDSÊ±
+	//ç®€åŒ–å„’ç•¥æ—¥è½¬BDSæ—¶
 	GPSTIME gpsTime = MjdTime2GpsTime(mjdTime);
 	BDSTIME bdsTime = GpsTime2BdsTime(gpsTime);
 	return bdsTime;
@@ -132,7 +133,7 @@ BDSTIME MjdTime2BdsTime(const MJDTIME& mjdTime)
 
 MJDTIME BdsTime2MjdTime(const BDSTIME& bdsTime)
 {
-	//BDSÊ±×ª¼ò»¯ÈåÂÔÈÕ
+	//BDSæ—¶è½¬ç®€åŒ–å„’ç•¥æ—¥
 	GPSTIME gpsTime = BdsTime2GpsTime(bdsTime);
 	MJDTIME mjdTime = GpsTime2MjdTime(gpsTime);
 	return mjdTime;
@@ -140,7 +141,7 @@ MJDTIME BdsTime2MjdTime(const BDSTIME& bdsTime)
 
 BDSTIME CommonTime2BdsTime(const COMMONTIME& commonTime)
 {
-	//Í¨ÓÃÊ±×ªBDSÊ±
+	//é€šç”¨æ—¶è½¬BDSæ—¶
 	GPSTIME gpsTime = CommonTime2GpsTime(commonTime);
 	BDSTIME bdsTime = GpsTime2BdsTime(gpsTime);
 	return bdsTime;
@@ -148,7 +149,7 @@ BDSTIME CommonTime2BdsTime(const COMMONTIME& commonTime)
 
 COMMONTIME BdsTime2CommonTime(const BDSTIME& bdsTime)
 {
-	//BDSÊ±×ªÍ¨ÓÃÊ±
+	//BDSæ—¶è½¬é€šç”¨æ—¶
 	GPSTIME gpsTime = BdsTime2GpsTime(bdsTime);
 	COMMONTIME commonTime = GpsTime2CommonTime(gpsTime);
 	return commonTime;
@@ -156,14 +157,14 @@ COMMONTIME BdsTime2CommonTime(const BDSTIME& bdsTime)
 
 void GPSTIME::check()
 {
-	//×Ô¼ì
-	for (int i = 0; i < 52 && this->secOfWeek < 0; i++)
+	//è‡ªæ£€
+	for (int i = 0; i < 52 && this->secOfWeek < 0; ++i)
 	{
-		//×î¶àÑ­»·52´Î£¬·ÀÖ¹ËÀÑ­»·
+		//æœ€å¤šå¾ªç¯52æ¬¡ï¼Œé˜²æ­¢æ­»å¾ªç¯
 		this->secOfWeek += 604800.0;
 		this->week--;
 	}
-	for(int i = 0; i < 52 && this->secOfWeek >= 604800.0; i++)
+	for(int i = 0; i < 52 && this->secOfWeek >= 604800.0; ++i)
 	{
 		this->secOfWeek -= 604800.0;
 		this->week++;
@@ -192,3 +193,5 @@ GPSTIME GPSTIME::operator-(const double sub) const
 	}
 	return result;
 }
+
+

@@ -1,42 +1,45 @@
 #pragma once
-#include "CDecode.h"
+
+#include "lib.h"
 #include "SatPos.h"
-#include "CDetectOutlier.h"
-#include <cstdio>
+#include "Detect.h"
 
 class SPP
 {
 private:
-	GPSTIME t{};//ĞÅºÅ·¢ÉäÊ±¿Ì
+    GPSTIME t{};  // ä¿¡å·å‘å°„æ—¶åˆ»
+    
+    XYZ sttnXyz{};  // æµ‹ç«™åœ¨åœ°å¿ƒåœ°å›ºåæ ‡ç³»ä¸‹çš„åæ ‡
+    BLH sttnBlh{};  // æµ‹ç«™åœ¨WGS84åæ ‡ç³»ä¸‹çš„åæ ‡
+    
+    double sttnClkG{};
+    double sttnClkB{};
+    double PDOP{};
+    double sigmaP{};
+    
+    double sttnV[3]{};
+    double sigmaV{};
+    
+    double dE{};
+    double dN{};
+    double dU{};
+    int sysNum[4]{};
+    
+    EpkPos epkPos;  // å«æ˜Ÿä½ç½®æ•°æ®
 
-	XYZ sttnXyz{};//²âÕ¾ÔÚµØĞÄµØ¹Ì×ø±êÏµÏÂµÄ×ø±ê
-	BLH sttnBlh{};//²âÕ¾ÔÚWGS84×ø±êÏµÏÂµÄ×ø±ê
-
-	double sttnClkG{};
-	double sttnClkB{};
-	double PDOP{};
-	double sigmaP{};
-
-	double sttnV[3]{};
-	double sigmaV{};
-
-	double dE{}; double dN{}; double dU{};
-	int sysNum[4]{};
-
-	SatPos satPos[MAXCHANNELNUM];
 public:
-	friend class Client;
-	void ExtendMatB(CMatrix& B, int total) const;//½«Éè¼Æ¾ØÕóB¸ù¾İGPSÒÔ¼°BDSÎÀĞÇÊıÄ¿Çé¿ö½øĞĞÀ©Õ¹
-	void ExtendDeltaX(CMatrix& deltaX) const;//½«deltaX¸ù¾İGPSÒÔ¼°BDSÎÀĞÇÊıÄ¿Çé¿ö½øĞĞÀ©Õ¹
- 
-	void StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw);//µ¥µã¶¨Î»
-    void StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw);//µ¥µã²âËÙ
+    friend class Client;
     
+    friend class RTK;
     
-	void CalDNEU();//¼ÆËã²âÕ¾ÔÚNEUÏµÏÂµÄ¶¨Î»Îó²î
-
-	void check();
+    friend class SDObs;
+    
+    void ExtendMatB(CMatrix &B, int total) const;  // å°†è®¾è®¡çŸ©é˜µBæ ¹æ®GPSä»¥åŠBDSå«æ˜Ÿæ•°ç›®æƒ…å†µè¿›è¡Œæ‰©å±•
+    void ExtendDeltaX(CMatrix &deltaX) const;  // å°†deltaXæ ¹æ®GPSä»¥åŠBDSå«æ˜Ÿæ•°ç›®æƒ…å†µè¿›è¡Œæ‰©å±•
+    
+    int StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config);  // å•ç‚¹å®šä½
+    void StdPntVel(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config);  // å•ç‚¹æµ‹é€Ÿ
+    
+    void CalDNEU(const XYZ &refXyz);  // è®¡ç®—æµ‹ç«™åœ¨NEUç³»ä¸‹çš„å®šä½è¯¯å·®
+    void check();
 };
-
-
-

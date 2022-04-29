@@ -1,76 +1,85 @@
 #pragma once
+
 #include "lib.h"
 #include "CDecode.h"
-#include "CMatrix.h"
-#include <iostream>
 
 struct PARAS
 {
-	double A{};//¹ìµÀ³¤°ëÖá
-	double n0{};//Æ½¾ùÔË¶¯½ÇËÙ¶È
-	double tk{};//Ïà¶ÔÓÚĞÇÀú²Î¿¼ÀúÔªµÄÊ±¼ä
-	double n{};//¶ÔÆ½¾ùÔË¶¯½ÇËÙ¶È½øĞĞ¸ÄÕı
-	double mk{};//Æ½½üµã½Ç
-	double ek{};//Æ«½üµã½Ç£¬µü´úÇó½â
-	double vk{};//Õæ½üµã½Ç
-	double phik{};//Éı½»½Ç¾à
-
-	//¶ş½×µ÷ºÍ¸ÄÕıÊı
-	double deltaUk{};//¼ÆËãÉı½»½Ç¾àµÄ¸ÄÕıÊı
-	double deltaRk{};//¼ÆËãÏò¾¶µÄ¸ÄÕıÊı
-	double deltaIk{};//¼ÆËã¹ìµÀÇã½Ç¸ÄÖ¤Êı
-
-	//¼ÆËã¾­¹ı¸ÄÕıµÄÉı½»½Ç¾à£¬Ïò¾¶ºÍ¹ìµÀÇã½Ç
-	double uk{};//¸ÄÕı¹ıµÄÉı½»½Ç¾à
-	double rk{};//¸ÄÕı¹ıµÄÏò¾¶
-	double ik{};//¸ÄÕı¹ıµÄ¹ìµÀÇã½Ç
-	double omegak{};//¸ÄÕıºóµÄÉı½»µã¾­¶È
-	double xy0[2]{};//ÎÀĞÇÔÚ¹ìµÀÆ½ÃæÉÏµÄÎ»ÖÃ
-
-
-	//¸÷²Î±äÁ¿¶ÔÊ±¼äµÄµ¼Êı
+	double A{};  // è½¨é“é•¿åŠè½´
+	double n0{};  // å¹³å‡è¿åŠ¨è§’é€Ÿåº¦
+	double tk{};  // ç›¸å¯¹äºæ˜Ÿå†å‚è€ƒå†å…ƒçš„æ—¶é—´
+	double n{};  // å¯¹å¹³å‡è¿åŠ¨è§’é€Ÿåº¦è¿›è¡Œæ”¹æ­£
+	double mk{};  // å¹³è¿‘ç‚¹è§’
+	double ek{};  // åè¿‘ç‚¹è§’ï¼Œè¿­ä»£æ±‚è§£
+	double vk{};  // çœŸè¿‘ç‚¹è§’
+	double phik{};  // å‡äº¤è§’è·
+	// äºŒé˜¶è°ƒå’Œæ”¹æ­£æ•°
+	double deltaUk{};  // è®¡ç®—å‡äº¤è§’è·çš„æ”¹æ­£æ•°
+	double deltaRk{};  // è®¡ç®—å‘å¾„çš„æ”¹æ­£æ•°
+	double deltaIk{};  // è®¡ç®—è½¨é“å€¾è§’æ”¹è¯æ•°
+	// è®¡ç®—ç»è¿‡æ”¹æ­£çš„å‡äº¤è§’è·ï¼Œå‘å¾„å’Œè½¨é“å€¾è§’
+	double uk{};  // æ”¹æ­£è¿‡çš„å‡äº¤è§’è·
+	double rk{};  // æ”¹æ­£è¿‡çš„å‘å¾„
+	double ik{};  // æ”¹æ­£è¿‡çš„è½¨é“å€¾è§’
+	double omegak{};  // æ”¹æ­£åçš„å‡äº¤ç‚¹ç»åº¦
+	double xy0[2]{};  // å«æ˜Ÿåœ¨è½¨é“å¹³é¢ä¸Šçš„ä½ç½®
+ 
+	// å„å‚å˜é‡å¯¹æ—¶é—´çš„å¯¼æ•°
 	double mkDot{};
-	double ekDot{};
-	double vkDot{};
-	double phikDot{};
+	double ekDot{}, vkDot{}, phikDot{};
 
-	double deltaUkDot{};
-	double deltaRkDot{};
-	double deltaIkDot{};
+	double deltaUkDot{}, deltaRkDot{}, deltaIkDot{};
 
 	double omegakDot{};
-	double ikDot{};
-	double rkDot{};
-	double ukDot{};
+	double ikDot{}, rkDot{}, ukDot{};
 
-	//ÎÀĞÇÔÚ¹ìµÀÆ½ÃæÄÚµÄËÙ¶È
-	double xkDot{};
-	double ykDot{};
- 
+	// å«æ˜Ÿåœ¨è½¨é“å¹³é¢å†…çš„é€Ÿåº¦
+	double xkDot{}, ykDot{};
 };
 
 class SatPos
 {
 protected:
-	XYZ satXyz{};//ÎÀĞÇÔÚµØĞÄµØ¹Ì×ø±êÏµÏÂµÄ×ø±ê
-	double satV[3]{};//ÎÀĞÇÔË¶¯ËÙ¶È
-	double clkBias{};//ÎÀĞÇÖÓ²î
-	double clkRate{};//ÎÀĞÇÖÓËÙ
-	double eleAngle{};//ÎÀĞÇ¸ß¶È½Ç
-	double tropDelay{};//¶ÔÁ÷²ãÑÓ³Ù
-	
+    GNSS sys{};
+    unsigned short prn{};
+	XYZ satXyz{};  // å«æ˜Ÿåœ¨åœ°å¿ƒåœ°å›ºåæ ‡ç³»ä¸‹çš„åæ ‡
+	double satV[3]{};  // å«æ˜Ÿè¿åŠ¨é€Ÿåº¦
+	double clkBias{};  // å«æ˜Ÿé’Ÿå·®
+	double clkRate{};  // å«æ˜Ÿé’Ÿé€Ÿ
+	double eleAngle{};  // å«æ˜Ÿé«˜åº¦è§’
+	double tropDelay{};  // å¯¹æµå±‚å»¶è¿Ÿ
+	double obsTime{};  // è§‚æµ‹å†å…ƒæ•°
+ 
 public:
 	friend class SPP;
+    friend class RTK;
+    friend class EpkPos;
     
-    static PARAS CalParas(GPSTIME t/*ÎÀĞÇÖÓ±íÃæÊ±*/, const EPHEMERIS& ephem);
+    bool valid{};  // å®šä½ç»“æœæ˜¯å¦å¯ç”¨ ä¾‹å¦‚é«˜åº¦è§’é™åˆ¶ç­‰ç­‰
+    
+    static PARAS CalParas(GPSTIME t/*å«æ˜Ÿé’Ÿè¡¨é¢æ—¶*/, const EPHEMERIS& ephem);
 
-    void CalSat(GPSTIME t, const  EPHEMERIS& ephem);//¼ÆËãÎÀĞÇÏà¹ØÊı¾İ
-    void CalPosVel(const EPHEMERIS& ephem, PARAS& para);//ÎÀĞÇÎ»ÖÃËÙ¶È¼ÆËã
-    void ClockBias(GPSTIME t, double ek, const EPHEMERIS& ephem);//ÖÓ²î¼ÆËã
-    void ClockRate(GPSTIME t, double ek, double ekDot, const EPHEMERIS& ephem);//ÖÓËÙ¼ÆËã
-    static bool Overdue(GPSTIME t, const  EPHEMERIS& ephem);//ÅĞ¶ÏĞÇÀúÊÇ·ñ¹ıÆÚ
+    void CalSat(GPSTIME t, const EPHEMERIS& ephem);  // è®¡ç®—å«æ˜Ÿç›¸å…³æ•°æ®
+    void CalPosVel(const EPHEMERIS& ephem, PARAS& para);  // å«æ˜Ÿä½ç½®é€Ÿåº¦è®¡ç®—
+    void ClockBias(GPSTIME t, double ek, const EPHEMERIS& ephem);  // é’Ÿå·®è®¡ç®—
+    void ClockRate(GPSTIME t, double ek, double ekDot, const EPHEMERIS& ephem);  // é’Ÿé€Ÿè®¡ç®—
+    static bool Overdue(GPSTIME t, const EPHEMERIS& ephem);  // åˆ¤æ–­æ˜Ÿå†æ˜¯å¦è¿‡æœŸ
+    
+	void CalSatEl(const XYZ& rcvr/*æ¥æ”¶æœºåœ°å¿ƒåœ°å›ºåæ ‡*/, CoorSys& coor/*åæ ‡ç³»*/);  // å«æ˜Ÿé«˜åº¦è§’çš„è®¡ç®—  rad
+	void Hopefield(const XYZ& rcvr/*æ¥æ”¶æœºåœ°å¿ƒåœ°å›ºåæ ‡*/, CoorSys& coor/*åæ ‡ç³»*/);  // å¯¹æµå±‚Hopefieldæ¨¡å‹æ”¹æ­£
  
-	void CalSatE(const XYZ& rcvr/*½ÓÊÕ»úµØĞÄµØ¹Ì×ø±ê*/, CoorSys& coor/*×ø±êÏµ*/);//ÎÀĞÇ¸ß¶È½ÇµÄ¼ÆËã
-	void Hopefield(const XYZ& rcvr/*½ÓÊÕ»úµØĞÄµØ¹Ì×ø±ê*/, CoorSys& coor/*×ø±êÏµ*/);//¶ÔÁ÷²ãHopefieldÄ£ĞÍ¸ÄÕı
- 
+};
+
+class EpkPos
+{
+protected:
+    unsigned short satNum{};
+    SatPos satPos[MAXCHANNELNUM]{};
+    
+public:
+    friend class SPP;
+    friend class RTK;
+    friend class SDObs;
+    
+    int FindSatPosIndex(int prn, GNSS sys);  // æŸ¥æ‰¾å«æ˜Ÿ
 };

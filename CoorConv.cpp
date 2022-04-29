@@ -1,12 +1,13 @@
 #include "lib.h"
+#include <cmath>
 
-//Á½¸ö´óµØ×ø±êÏµÍ³²ÎÊı
+//ä¸¤ä¸ªå¤§åœ°åæ ‡ç³»ç»Ÿå‚æ•°
 CoorSys wgs84
 {
     6378137.0,
     6356752.3142,
     0.00669437999013,
-    0.00673949674227,
+    0.006739496742227,
     1 / 298.257223563,
     3.986004418e+14,
     7.292115e-5
@@ -17,7 +18,7 @@ CoorSys cgcs2000
     6378137.0,
     6356752.3142,
     0.00669437999013,
-    0.00673949674227,
+    0.006739496742227,
     1 / 298.257223563,
     3.986004418e+14,
     7.292115e-5
@@ -28,7 +29,7 @@ double Deg2Rad(const double deg, const double min, const double sec)
     double rad{};
     if (deg > 0 || min > 0 || sec > 0)
     {
-        //½Ç¶È´óÓÚ0
+        //è§’åº¦å¤§äº0
         rad = (deg + min / 60.0 + sec / 3600.0) * constant::pi / 180.0;
         return rad;
     }
@@ -36,11 +37,29 @@ double Deg2Rad(const double deg, const double min, const double sec)
         return -114514.0;
 }
 
+XYZ XYZ::operator+(const XYZ &add) const
+{
+    XYZ result{};
+    result.x = this->x + add.x;
+    result.y = this->y + add.y;
+    result.z = this->z + add.z;
+    return result;
+}
+
+XYZ XYZ::operator-(const XYZ& sub) const
+{
+    XYZ result{};
+    result.x = this->x - sub.x;
+    result.y = this->y - sub.y;
+    result.z = this->z - sub.z;
+    return result;
+}
+
 XYZ BLH2XYZ(const BLH& blh, const CoorSys& coorSys)
 {
     XYZ xyz{};
-    double N = coorSys.a / sqrt(1 - coorSys.eSquare * sin(blh.B) * sin(blh.B));//Ã®ÓÏÈ¦ÇúÂÊ°ë¾¶
-    //PPT 1-4 20Ò³ ¹«Ê½
+    double N = coorSys.a / sqrt(1 - coorSys.eSquare * sin(blh.B) * sin(blh.B));  // å¯é…‰åœˆæ›²ç‡åŠå¾„
+    //PPT 1-4 20é¡µ å…¬å¼
     xyz.x = (N + blh.H) * cos(blh.B) * cos(blh.L);
     xyz.y = (N + blh.H) * cos(blh.B) * sin(blh.L);
     xyz.z = (N * (1 - coorSys.eSquare) + blh.H) * sin(blh.B);
@@ -53,7 +72,7 @@ BLH XYZ2BLH(const XYZ& xyz, const CoorSys& coorSys)
     BLH blh{};
     if (sqrt(xyz.x * xyz.x + xyz.y * xyz.y + xyz.z * xyz.z) < 1e+6)
     {
-        //²»ÔÚµØÇò±íÃæ£¬ÈÏ¶¨ÎªÒì³£ÊıÖµ
+        //ä¸åœ¨åœ°çƒè¡¨é¢ï¼Œè®¤å®šä¸ºå¼‚å¸¸æ•°å€¼
         blh.B = 0;
         blh.L = 0;
         blh.H = 0;
@@ -61,23 +80,23 @@ BLH XYZ2BLH(const XYZ& xyz, const CoorSys& coorSys)
     }
     double x2 = xyz.x * xyz.x;
     double y2 = xyz.y * xyz.y;
-    double z2 = xyz.z * xyz.z;//°Ñ¸÷ÖµÆ½·½Çó³öÀ´·½±ãºóÃæ¼ÆËã
+    double z2 = xyz.z * xyz.z;  // æŠŠå„å€¼å¹³æ–¹æ±‚å‡ºæ¥æ–¹ä¾¿åé¢è®¡ç®—
     
-    double deltaZ = 0;//¸³³õÖµ
-    double deltaZ1 = coorSys.eSquare * xyz.z;//deltaZ n+1
+    double deltaZ = 0;  // èµ‹åˆå€¼
+    double deltaZ1 = coorSys.eSquare * xyz.z;  // deltaZ n+1
     double sinB = ((xyz.z + deltaZ1) + 1e-6) / (1e-6 + sqrt(x2 + y2 + (xyz.z + deltaZ1) * (xyz.z + deltaZ1)));
     double N = coorSys.a / sqrt(1 - coorSys.eSquare * sinB * sinB);
     
-    blh.L = atan2(xyz.y, xyz.x);//×¢ÒâLÈ¡Öµ·¶Î§£¬ÕâÀïÒªÓÃatan2
+    blh.L = atan2(xyz.y, xyz.x);  // æ³¨æ„Lå–å€¼èŒƒå›´ï¼Œè¿™é‡Œè¦ç”¨atan2
     
-    for (int i = 0; i < 12 && fabs(deltaZ - deltaZ1) > 1e-10; i++)
+    for (int i = 0; i < 12 && fabs(deltaZ - deltaZ1) > 1e-10; ++i)
     {
         deltaZ = deltaZ1;
         sinB = (xyz.z + deltaZ) / sqrt(x2 + y2 + (xyz.z + deltaZ) * (xyz.z + deltaZ));
         N = coorSys.a / sqrt(1 - coorSys.eSquare * sinB * sinB);
         deltaZ1 = N * coorSys.eSquare * sinB;
         
-    }//µü´úÇó¦¤Z
+    }  // è¿­ä»£æ±‚Î”Z
     blh.B = atan2(xyz.z + deltaZ, sqrt(x2 + y2));
     blh.H = sqrt(x2 + y2 + (xyz.z + deltaZ) * (xyz.z + deltaZ)) - N;
     

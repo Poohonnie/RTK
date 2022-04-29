@@ -1,10 +1,14 @@
+#include "lib.h"
+#include "CDecode.h"
+#include <iostream>
+#include <cmath>
 #include "SatPos.h"
 
-PARAS SatPos::CalParas(GPSTIME t/*ÎÀĞÇÖÓ±íÃæÊ±*/, const EPHEMERIS& ephem)
+PARAS SatPos::CalParas(GPSTIME t/*å«æ˜Ÿé’Ÿè¡¨é¢æ—¶*/, const EPHEMERIS& ephem)
 {
     PARAS paras;
-    //ÖĞ¼ä¼ÆËãÁ¿Çó½â
-    paras.A = ephem.A;//¹ìµÀ³¤°ëÖá
+    //ä¸­é—´è®¡ç®—é‡æ±‚è§£
+    paras.A = ephem.A;  // è½¨é“é•¿åŠè½´
     GPSTIME toe{};
     double omega{};
     if(ephem.satSys == GNSS::GPS)
@@ -17,38 +21,38 @@ PARAS SatPos::CalParas(GPSTIME t/*ÎÀĞÇÖÓ±íÃæÊ±*/, const EPHEMERIS& ephem)
         toe = ephem.toeB;
         omega = cgcs2000.omega;
     }
-    paras.n0 = sqrt(wgs84.GM / (paras.A * paras.A * paras.A));//Æ½¾ùÔË¶¯½ÇËÙ¶È
-    paras.tk = SoWSubtraction(t.secOfWeek, toe.secOfWeek);//Ïà¶ÔÓÚĞÇÀú²Î¿¼ÀúÔªµÄÊ±¼ä
+    paras.n0 = sqrt(wgs84.GM / (paras.A * paras.A * paras.A));  // å¹³å‡è¿åŠ¨è§’é€Ÿåº¦
+    paras.tk = SoWSubtraction(t.secOfWeek, toe.secOfWeek);  // ç›¸å¯¹äºæ˜Ÿå†å‚è€ƒå†å…ƒçš„æ—¶é—´
     
-    paras.n = paras.n0 + ephem.deltaN;//¶ÔÆ½¾ùÔË¶¯½ÇËÙ¶È½øĞĞ¸ÄÕı
-    paras.mk = ephem.m0 + paras.n * paras.tk;//Æ½½üµã½Ç
+    paras.n = paras.n0 + ephem.deltaN;  // å¯¹å¹³å‡è¿åŠ¨è§’é€Ÿåº¦è¿›è¡Œæ”¹æ­£
+    paras.mk = ephem.m0 + paras.n * paras.tk;  // å¹³è¿‘ç‚¹è§’
     paras.mk = paras.mk > 0 ? paras.mk : paras.mk + 2 * constant::pi;
     
-    paras.ek = 0;//Æ«½üµã½Ç£¬µü´úÇó½â
+    paras.ek = 0;  // åè¿‘ç‚¹è§’ï¼Œè¿­ä»£æ±‚è§£
     double ek1 = paras.mk + ephem.ecc * sin(paras.mk);
-    for (int i = 0; i < 20 && fabs(paras.ek - ek1) > 1e-15; i++)
+    for (int i = 0; i < 20 && fabs(paras.ek - ek1) > 1e-15; ++i)
     {
         paras.ek = ek1;
         ek1 = paras.mk + ephem.ecc * sin(paras.ek);
     }
-    paras.vk = atan2(sqrt(1 - ephem.ecc * ephem.ecc) * sin(paras.ek), cos(paras.ek) - ephem.ecc);//Õæ½üµã½Ç
-    paras.phik = paras.vk + ephem.omega;//Éı½»½Ç¾à(Î´¾­¸ÄÕı)
-    //¼ÆËã¶ş½×µ÷ºÍ¸ÄÕıÊı
-    paras.deltaUk = ephem.cus * sin(2 * paras.phik) + ephem.cuc * cos(2 * paras.phik);//¼ÆËãÉı½»½Ç¾àµÄ¸ÄÕıÊı
-    paras.deltaRk = ephem.crs * sin(2 * paras.phik) + ephem.crc * cos(2 * paras.phik);//¼ÆËãÏò¾¶µÄ¸ÄÕıÊı
-    paras.deltaIk = ephem.cis * sin(2 * paras.phik) + ephem.cic * cos(2 * paras.phik);//¼ÆËã¹ìµÀÇã½Ç¸ÄÖ¤Êı
+    paras.vk = atan2(sqrt(1 - ephem.ecc * ephem.ecc) * sin(paras.ek), cos(paras.ek) - ephem.ecc);  // çœŸè¿‘ç‚¹è§’
+    paras.phik = paras.vk + ephem.omega;  // å‡äº¤è§’è·(æœªç»æ”¹æ­£)
+    //è®¡ç®—äºŒé˜¶è°ƒå’Œæ”¹æ­£æ•°
+    paras.deltaUk = ephem.cus * sin(2 * paras.phik) + ephem.cuc * cos(2 * paras.phik);  // è®¡ç®—å‡äº¤è§’è·çš„æ”¹æ­£æ•°
+    paras.deltaRk = ephem.crs * sin(2 * paras.phik) + ephem.crc * cos(2 * paras.phik);  // è®¡ç®—å‘å¾„çš„æ”¹æ­£æ•°
+    paras.deltaIk = ephem.cis * sin(2 * paras.phik) + ephem.cic * cos(2 * paras.phik);  // è®¡ç®—è½¨é“å€¾è§’æ”¹è¯æ•°
     
-    //¼ÆËã¾­¹ı¸ÄÕıµÄÉı½»½Ç¾à£¬Ïò¾¶ºÍ¹ìµÀÇã½Ç
-    paras.uk = paras.phik + paras.deltaUk;//¸ÄÕı¹ıµÄÉı½»½Ç¾à
-    paras.rk = paras.A * (1 - ephem.ecc * cos(paras.ek)) + paras.deltaRk;//¸ÄÕı¹ıµÄÏò¾¶
-    paras.ik = ephem.i0 + paras.deltaIk + ephem.iDot * paras.tk;//¸ÄÕı¹ıµÄ¹ìµÀÇã½Ç
+    //è®¡ç®—ç»è¿‡æ”¹æ­£çš„å‡äº¤è§’è·ï¼Œå‘å¾„å’Œè½¨é“å€¾è§’
+    paras.uk = paras.phik + paras.deltaUk;  // æ”¹æ­£è¿‡çš„å‡äº¤è§’è·
+    paras.rk = paras.A * (1 - ephem.ecc * cos(paras.ek)) + paras.deltaRk;  // æ”¹æ­£è¿‡çš„å‘å¾„
+    paras.ik = ephem.i0 + paras.deltaIk + ephem.iDot * paras.tk;  // æ”¹æ­£è¿‡çš„è½¨é“å€¾è§’
     
-    paras.omegak = ephem.omega0 + (ephem.omegaDot - omega) * paras.tk - omega * toe.secOfWeek;//¸ÄÕıºóµÄÉı½»µã¾­¶È
+    paras.omegak = ephem.omega0 + (ephem.omegaDot - omega) * paras.tk - omega * toe.secOfWeek;  // æ”¹æ­£åçš„å‡äº¤ç‚¹ç»åº¦
 
     paras.xy0[0] = paras.rk * cos(paras.uk);
-    paras.xy0[1] = paras.rk * sin(paras.uk);//ÎÀĞÇÔÚ¹ìµÀÆ½ÃæÉÏµÄÎ»ÖÃ
+    paras.xy0[1] = paras.rk * sin(paras.uk);  // å«æ˜Ÿåœ¨è½¨é“å¹³é¢ä¸Šçš„ä½ç½®
     
-    //¸÷²Î±äÁ¿¶ÔÊ±¼äµÄµ¼Êı
+    //å„å‚å˜é‡å¯¹æ—¶é—´çš„å¯¼æ•°
     paras.mkDot = paras.n;
     paras.ekDot = paras.mkDot / (1 - ephem.ecc * cos(paras.ek));
     paras.vkDot = sqrt(1 - ephem.ecc * ephem.ecc) * paras.ekDot / (1 - ephem.ecc * cos(paras.ek));
@@ -63,125 +67,17 @@ PARAS SatPos::CalParas(GPSTIME t/*ÎÀĞÇÖÓ±íÃæÊ±*/, const EPHEMERIS& ephem)
     paras.rkDot = paras.A * ephem.ecc * paras.ekDot * sin(paras.ek) + paras.deltaRkDot;
     paras.ukDot = paras.phikDot + paras.deltaUkDot;
     
-    //ÎÀĞÇÔÚ¹ìµÀÆ½ÃæÄÚµÄËÙ¶È
+    //å«æ˜Ÿåœ¨è½¨é“å¹³é¢å†…çš„é€Ÿåº¦
     paras.xkDot = paras.rkDot * cos(paras.uk) - paras.rk * paras.ukDot * sin(paras.uk);
     paras.ykDot = paras.rkDot * sin(paras.uk) + paras.rk * paras.ukDot * cos(paras.uk);
     return paras;
 }
 
-//PARAS SatPos::CalculateParas(const GPSTIME t/*ÎÀĞÇÖÓ±íÃæÊ±*/, const GPSEPHEM& gpsEphem)
-//{
-//	PARAS paras;
-//	//ÖĞ¼ä¼ÆËãÁ¿Çó½â
-//	paras.A = gpsEphem.A;//GPS¹ìµÀ³¤°ëÖá
-//	paras.n0 = sqrt(wgs84.GM / (paras.A * paras.A * paras.A));//Æ½¾ùÔË¶¯½ÇËÙ¶È
-//	paras.tk = SoWSubtraction(t.secOfWeek, gpsEphem.toe.secOfWeek);//Ïà¶ÔÓÚĞÇÀú²Î¿¼ÀúÔªµÄÊ±¼ä
-//	paras.n = paras.n0 + gpsEphem.deltaN;//¶ÔÆ½¾ùÔË¶¯½ÇËÙ¶È½øĞĞ¸ÄÕı
-//	paras.mk = gpsEphem.m0 + paras.n * paras.tk;//Æ½½üµã½Ç
-//	paras.mk = paras.mk > 0 ? paras.mk : paras.mk + 2 * constant::pi;
-//	paras.ek = 0;//Æ«½üµã½Ç£¬µü´úÇó½â
-//	double ek1 = paras.mk + gpsEphem.ecc * sin(paras.mk);
-//	for (int i = 0; i < 20 && fabs(paras.ek - ek1) > 1e-15; i++)
-//	{
-//		paras.ek = ek1;
-//		ek1 = paras.mk + gpsEphem.ecc * sin(paras.ek);
-//	}
-//	paras.vk = atan2(sqrt(1 - gpsEphem.ecc * gpsEphem.ecc) * sin(paras.ek), cos(paras.ek) - gpsEphem.ecc);//Õæ½üµã½Ç
-//	paras.phik = paras.vk + gpsEphem.omega;//Éı½»½Ç¾à(Î´¾­¸ÄÕı)
-//	//¼ÆËã¶ş½×µ÷ºÍ¸ÄÕıÊı
-//	paras.deltaUk = gpsEphem.cus * sin(2 * paras.phik) + gpsEphem.cuc * cos(2 * paras.phik);//¼ÆËãÉı½»½Ç¾àµÄ¸ÄÕıÊı
-//	paras.deltaRk = gpsEphem.crs * sin(2 * paras.phik) + gpsEphem.crc * cos(2 * paras.phik);//¼ÆËãÏò¾¶µÄ¸ÄÕıÊı
-//	paras.deltaIk = gpsEphem.cis * sin(2 * paras.phik) + gpsEphem.cic * cos(2 * paras.phik);//¼ÆËã¹ìµÀÇã½Ç¸ÄÖ¤Êı
-//
-//	//¼ÆËã¾­¹ı¸ÄÕıµÄÉı½»½Ç¾à£¬Ïò¾¶ºÍ¹ìµÀÇã½Ç
-//	paras.uk = paras.phik + paras.deltaUk;//¸ÄÕı¹ıµÄÉı½»½Ç¾à
-//	paras.rk = paras.A * (1 - gpsEphem.ecc * cos(paras.ek)) + paras.deltaRk;//¸ÄÕı¹ıµÄÏò¾¶
-//	paras.ik = gpsEphem.i0 + paras.deltaIk + gpsEphem.iDot * paras.tk;//¸ÄÕı¹ıµÄ¹ìµÀÇã½Ç
-//	paras.omegak = gpsEphem.omega0 + (gpsEphem.omegaDot - wgs84.omega) * paras.tk - wgs84.omega * gpsEphem.toe.secOfWeek;//¸ÄÕıºóµÄÉı½»µã¾­¶È
-//	paras.xy0[0] = paras.rk * cos(paras.uk);
-//	paras.xy0[1] = paras.rk * sin(paras.uk);//ÎÀĞÇÔÚ¹ìµÀÆ½ÃæÉÏµÄÎ»ÖÃ
-//
-//
-//	//¸÷²Î±äÁ¿¶ÔÊ±¼äµÄµ¼Êı
-//	paras.mkDot = paras.n;
-//	paras.ekDot = paras.mkDot / (1 - gpsEphem.ecc * cos(paras.ek));
-//	paras.vkDot = sqrt(1 - gpsEphem.ecc * gpsEphem.ecc) * paras.ekDot / (1 - gpsEphem.ecc * cos(paras.ek));
-//	paras.phikDot = paras.vkDot;
-//
-//	paras.deltaUkDot = 2 * paras.phikDot * (gpsEphem.cus * cos(2 * paras.phik) - gpsEphem.cuc * sin(2 * paras.phik));
-//	paras.deltaRkDot = 2 * paras.phikDot * (gpsEphem.crs * cos(2 * paras.phik) - gpsEphem.crc * sin(2 * paras.phik));
-//	paras.deltaIkDot = 2 * paras.phikDot * (gpsEphem.cis * cos(2 * paras.phik) - gpsEphem.cic * sin(2 * paras.phik));
-//
-//	paras.omegakDot = gpsEphem.omegaDot - wgs84.omega;
-//	paras.ikDot = gpsEphem.iDot + paras.deltaIkDot;
-//	paras.rkDot = paras.A * gpsEphem.ecc * paras.ekDot * sin(paras.ek) + paras.deltaRkDot;
-//	paras.ukDot = paras.phikDot + paras.deltaUkDot;
-//
-//	//ÎÀĞÇÔÚ¹ìµÀÆ½ÃæÄÚµÄËÙ¶È
-//	paras.xkDot = paras.rkDot * cos(paras.uk) - paras.rk * paras.ukDot * sin(paras.uk);
-//	paras.ykDot = paras.rkDot * sin(paras.uk) + paras.rk * paras.ukDot * cos(paras.uk);
-//	return paras;
-//}
-//
-//PARAS SatPos::CalculateParas(const BDSTIME t/*ÎÀĞÇÖÓ±íÃæÊ±*/, const BDSEPHEM& bdsEphem)
-//{
-//	PARAS paras;
-//	//ÖĞ¼ä¼ÆËãÁ¿Çó½â
-//	paras.A = bdsEphem.A;//¹ìµÀ³¤°ëÖá
-//	paras.n0 = sqrt(cgcs2000.GM / (paras.A * paras.A * paras.A));//Æ½¾ùÔË¶¯½ÇËÙ¶È
-//	paras.tk = SoWSubtraction(t.secOfWeek, bdsEphem.toe.secOfWeek);//Ïà¶ÔÓÚĞÇÀú²Î¿¼ÀúÔªµÄÊ±¼ä
-//	paras.n = paras.n0 + bdsEphem.deltaN;//¶ÔÆ½¾ùÔË¶¯½ÇËÙ¶È½øĞĞ¸ÄÕı
-//	paras.mk = bdsEphem.m0 + paras.n * paras.tk;//Æ½½üµã½Ç
-//	paras.mk = paras.mk > 0 ? paras.mk : paras.mk + 2 * constant::pi;
-//	paras.ek = 0;//Æ«½üµã½Ç£¬µü´úÇó½â
-//	double ek1 = paras.mk + bdsEphem.ecc * sin(paras.mk);
-//	for (int i = 0; i < 20 && fabs(paras.ek - ek1) > 1e-15; i++)
-//	{
-//		paras.ek = ek1;
-//		ek1 = paras.mk + bdsEphem.ecc * sin(paras.ek);
-//	}
-//	paras.vk = atan2(sqrt(1 - bdsEphem.ecc * bdsEphem.ecc) * sin(paras.ek), cos(paras.ek) - bdsEphem.ecc);//Õæ½üµã½Ç
-//	paras.phik = paras.vk + bdsEphem.omega;//Éı½»½Ç¾à(Î´¾­¸ÄÕı)
-//	//¼ÆËã¶ş½×µ÷ºÍ¸ÄÕıÊı
-//	paras.deltaUk = bdsEphem.cus * sin(2 * paras.phik) + bdsEphem.cuc * cos(2 * paras.phik);//¼ÆËãÉı½»½Ç¾àµÄ¸ÄÕıÊı
-//	paras.deltaRk = bdsEphem.crs * sin(2 * paras.phik) + bdsEphem.crc * cos(2 * paras.phik);//¼ÆËãÏò¾¶µÄ¸ÄÕıÊı
-//	paras.deltaIk = bdsEphem.cis * sin(2 * paras.phik) + bdsEphem.cic * cos(2 * paras.phik);//¼ÆËã¹ìµÀÇã½Ç¸ÄÖ¤Êı
-//
-//	//¼ÆËã¾­¹ı¸ÄÕıµÄÉı½»½Ç¾à£¬Ïò¾¶ºÍ¹ìµÀÇã½Ç
-//	paras.uk = paras.phik + paras.deltaUk;//¸ÄÕı¹ıµÄÉı½»½Ç¾à
-//	paras.rk = paras.A * (1 - bdsEphem.ecc * cos(paras.ek)) + paras.deltaRk;//¸ÄÕı¹ıµÄÏò¾¶
-//	paras.ik = bdsEphem.i0 + paras.deltaIk + bdsEphem.iDot * paras.tk;//¸ÄÕı¹ıµÄ¹ìµÀÇã½Ç
-//	paras.omegak = bdsEphem.omega0 + (bdsEphem.omegaDot - cgcs2000.omega) * paras.tk - cgcs2000.omega * bdsEphem.toe.secOfWeek;//¸ÄÕıºóµÄÉı½»µã¾­¶È
-//	paras.xy0[0] = paras.rk * cos(paras.uk);
-//	paras.xy0[1] = paras.rk * sin(paras.uk);//ÎÀĞÇÔÚ¹ìµÀÆ½ÃæÉÏµÄÎ»ÖÃ
-//
-//
-//	//¸÷²Î±äÁ¿¶ÔÊ±¼äµÄµ¼Êı
-//	paras.mkDot = paras.n;
-//	paras.ekDot = paras.mkDot / (1 - bdsEphem.ecc * cos(paras.ek));
-//	paras.vkDot = sqrt(1 - bdsEphem.ecc * bdsEphem.ecc) * paras.ekDot / (1 - bdsEphem.ecc * cos(paras.ek));
-//	paras.phikDot = paras.vkDot;
-//
-//	paras.deltaUkDot = 2 * paras.phikDot * (bdsEphem.cus * cos(2 * paras.phik) - bdsEphem.cuc * sin(2 * paras.phik));
-//	paras.deltaRkDot = 2 * paras.phikDot * (bdsEphem.crs * cos(2 * paras.phik) - bdsEphem.crc * sin(2 * paras.phik));
-//	paras.deltaIkDot = 2 * paras.phikDot * (bdsEphem.cis * cos(2 * paras.phik) - bdsEphem.cic * sin(2 * paras.phik));
-//
-//	paras.omegakDot = bdsEphem.omegaDot - cgcs2000.omega;
-//	paras.ikDot = bdsEphem.iDot + paras.deltaIkDot;
-//	paras.rkDot = paras.A * bdsEphem.ecc * paras.ekDot * sin(paras.ek) + paras.deltaRkDot;
-//	paras.ukDot = paras.phikDot + paras.deltaUkDot;
-//
-//	//ÎÀĞÇÔÚ¹ìµÀÆ½ÃæÄÚµÄËÙ¶È
-//	paras.xkDot = paras.rkDot * cos(paras.uk) - paras.rk * paras.ukDot * sin(paras.uk);
-//	paras.ykDot = paras.rkDot * sin(paras.uk) + paras.rk * paras.ukDot * cos(paras.uk);
-//	return paras;
-//}
-
 void SatPos::CalSat(GPSTIME t, const  EPHEMERIS& ephem)
 {
     GPSTIME t0 = t;
     if(ephem.satSys == GNSS::BDS)
-        //BDSÊ¹ÓÃµÄÊÇBDSTIME£¬ËùÒÔÕâÀïÒª×ª»»
+        //BDSä½¿ç”¨çš„æ˜¯BDSTIMEï¼Œæ‰€ä»¥è¿™é‡Œè¦è½¬æ¢
         t0 = GpsTime2BdsTime(t);
     
     PARAS Para = CalParas(t0, ephem);
@@ -193,16 +89,16 @@ void SatPos::CalSat(GPSTIME t, const  EPHEMERIS& ephem)
 void SatPos::CalPosVel(const EPHEMERIS& ephem, PARAS& para)
 {
     /////////////////////////////////
-    //		ÎÀĞÇÎ»ÖÃËÙ¶È¼ÆËã
+    //		å«æ˜Ÿä½ç½®é€Ÿåº¦è®¡ç®—
     /////////////////////////////////
     if(ephem.satSys == GNSS::GPS)
     {
-        //GPSÎÀĞÇºÍBDS MEO/IGSOÎÀĞÇ
-        //ÎÀĞÇÔÚµØÇòµØ¹Ì×ø±êÏµÖĞµÄÎ»ÖÃ¼ÆËã
+        //GPSå«æ˜Ÿå’ŒBDS MEO/IGSOå«æ˜Ÿ
+        //å«æ˜Ÿåœ¨åœ°çƒåœ°å›ºåæ ‡ç³»ä¸­çš„ä½ç½®è®¡ç®—
         satXyz.x = para.xy0[0] * cos(para.omegak) - para.xy0[1] * cos(para.ik) * sin(para.omegak);
         satXyz.y = para.xy0[0] * sin(para.omegak) + para.xy0[1] * cos(para.ik) * cos(para.omegak);
         satXyz.z = para.xy0[1] * sin(para.ik);
-        //ÎÀĞÇÔÚµØÇòµØ¹Ì×ø±êÏµÖĞµÄËÙ¶È¼ÆËã
+        //å«æ˜Ÿåœ¨åœ°çƒåœ°å›ºåæ ‡ç³»ä¸­çš„é€Ÿåº¦è®¡ç®—
         satV[0] = para.xkDot * cos(para.omegak) - satXyz.y * para.omegakDot -
                   (para.ykDot * cos(para.ik) - satXyz.z * para.ikDot) * sin(para.omegak);
         satV[1] = para.xkDot * sin(para.omegak) + satXyz.x * para.omegakDot +
@@ -211,12 +107,12 @@ void SatPos::CalPosVel(const EPHEMERIS& ephem, PARAS& para)
     }
     else if(ephem.satSys == GNSS::BDS && !ephem.isGeo())
     {
-        //BDS MEO/IGSOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄÎ»ÖÃ¼ÆËã
+        //BDS MEO/IGSOå«æ˜Ÿåœ¨BDCSåæ ‡ç³»ä¸­çš„ä½ç½®è®¡ç®—
         satXyz.x = para.xy0[0] * cos(para.omegak) - para.xy0[1] * cos(para.ik) * sin(para.omegak);
         satXyz.y = para.xy0[0] * sin(para.omegak) + para.xy0[1] * cos(para.ik) * cos(para.omegak);
         satXyz.z = para.xy0[1] * sin(para.ik);
     
-        //BDS MEO/IGSOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄËÙ¶È¼ÆËã
+        //BDS MEO/IGSOå«æ˜Ÿåœ¨BDCSåæ ‡ç³»ä¸­çš„é€Ÿåº¦è®¡ç®—
         satV[0] = para.xkDot * cos(para.omegak) - para.xy0[0] * sin(para.omegak) * para.omegakDot - para.ykDot * cos(para.ik) * sin(para.omegak) + para.xy0[1] * cos(para.ik) * sin(para.omegak) * para.ikDot - para.xy0[1] * cos(para.ik) * cos(para.omegak) * para.omegakDot;
         satV[1] = para.xkDot * sin(para.omegak) + para.xy0[0] * cos(para.omegak) * para.omegakDot + para.ykDot * cos(para.ik) * cos(para.omegak) - para.xy0[1] * sin(para.ik) * sin(para.omegak) * para.ikDot - para.xy0[1] * cos(para.ik) * sin(para.omegak) * para.omegakDot;
         satV[2] = para.ykDot * sin(para.ik) + para.xy0[1] * sin(para.ik) * para.ikDot;
@@ -225,8 +121,8 @@ void SatPos::CalPosVel(const EPHEMERIS& ephem, PARAS& para)
     {
         para.omegak = ephem.omega0 + ephem.omegaDot * para.tk - cgcs2000.omega * ephem.toeB.secOfWeek;
     
-        //BDS GEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄÎ»ÖÃ¼ÆËã
-        //GEOÎÀĞÇÔÚ×Ô¶¨Òå×ø±êÏµÖĞµÄ×ø±ê
+        //BDS GEOå«æ˜Ÿåœ¨BDCSåæ ‡ç³»ä¸­çš„ä½ç½®è®¡ç®—
+        //GEOå«æ˜Ÿåœ¨è‡ªå®šä¹‰åæ ‡ç³»ä¸­çš„åæ ‡
         CMatrix XyzGK(3, 1);
         XyzGK.mat[0] = para.xy0[0] * cos(para.omegak) - para.xy0[1] * cos(para.ik) * sin(para.omegak);
         XyzGK.mat[1] = para.xy0[0] * sin(para.omegak) + para.xy0[1] * cos(para.ik) * cos(para.omegak);
@@ -244,13 +140,13 @@ void SatPos::CalPosVel(const EPHEMERIS& ephem, PARAS& para)
         Rz.mat[3] = -sin(zRad); Rz.mat[4] = cos(zRad); Rz.mat[5] = 0;
         Rz.mat[6] = 0; Rz.mat[7] = 0; Rz.mat[8] = 1;
     
-        //GEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄ×ø±ê
+        //GEOå«æ˜Ÿåœ¨BDCSåæ ‡ç³»ä¸­çš„åæ ‡
         CMatrix xyzMat(3, 3);
         xyzMat = Rz * (Rx * XyzGK);
         memcpy(&this->satXyz, xyzMat.mat, sizeof(XYZ));
     
-        //BDS GEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄËÙ¶È¼ÆËã
-        //GEOÎÀĞÇÔÚ×Ô¶¨Òå×ø±êÏµÖĞµÄËÙ¶È
+        //BDS GEOå«æ˜Ÿåœ¨BDCSåæ ‡ç³»ä¸­çš„é€Ÿåº¦è®¡ç®—
+        //GEOå«æ˜Ÿåœ¨è‡ªå®šä¹‰åæ ‡ç³»ä¸­çš„é€Ÿåº¦
         para.omegakDot = ephem.omegaDot;
     
         CMatrix vGK(3, 1);
@@ -264,7 +160,7 @@ void SatPos::CalPosVel(const EPHEMERIS& ephem, PARAS& para)
         RzDot.mat[6] = 0; RzDot.mat[7] = 0; RzDot.mat[8] = 0;
         RzDot = RzDot * cgcs2000.omega;
     
-        //GEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄËÙ¶È
+        //GEOå«æ˜Ÿåœ¨BDCSåæ ‡ç³»ä¸­çš„é€Ÿåº¦
         CMatrix vMat(3, 1);
         vMat = RzDot * (Rx * XyzGK) + Rz * (Rx * vGK);
         memcpy(&this->satV, vMat.mat, 3 * sizeof(double));
@@ -273,7 +169,7 @@ void SatPos::CalPosVel(const EPHEMERIS& ephem, PARAS& para)
 
 void SatPos::ClockBias(const GPSTIME t, double ek, const EPHEMERIS &ephem)
 {
-    //±±¶·ÓÃµÄÊÇBDSTIME£¬µ«ÊÇÔÚCalº¯ÊıÒÑ¾­×ª»»¹ıÁË£¬ËùÒÔÕâÀï²»ÓÃÔÙ×ª»»¡£
+    //åŒ—æ–—ç”¨çš„æ˜¯BDSTIMEï¼Œä½†æ˜¯åœ¨Calå‡½æ•°å·²ç»è½¬æ¢è¿‡äº†ï¼Œæ‰€ä»¥è¿™é‡Œä¸ç”¨å†è½¬æ¢ã€‚
     double GM;
     if(ephem.satSys == GNSS::GPS)
         GM = wgs84.GM;
@@ -281,7 +177,7 @@ void SatPos::ClockBias(const GPSTIME t, double ek, const EPHEMERIS &ephem)
         GM = cgcs2000.GM;
     
     double F = -2.0 * sqrt(GM) / constant::c / constant::c;
-    double delta_tr = F * ephem.ecc * sqrt(ephem.A) * sin(ek);//Ïà¶ÔÂÛĞ§Ó¦Îó²î¸ÄÕıÏî
+    double delta_tr = F * ephem.ecc * sqrt(ephem.A) * sin(ek);  // ç›¸å¯¹è®ºæ•ˆåº”è¯¯å·®æ”¹æ­£é¡¹
     double delta_t = SoWSubtraction(t.secOfWeek, ephem.toc);
     this->clkBias = ephem.af[0] + ephem.af[1] * delta_t + ephem.af[2] * delta_t * delta_t + delta_tr /*- tgd*/;
 }
@@ -294,7 +190,7 @@ void SatPos::ClockRate(const GPSTIME t, double ek, double ekDot, const EPHEMERIS
     else if(ephem.satSys == GNSS::BDS)
         GM = cgcs2000.GM;
     
-    double F = -2.0 * sqrt(GM) / constant::c / constant::c;//Ïà¶ÔÂÛĞ§Ó¦Îó²î¸ÄÕı
+    double F = -2.0 * sqrt(GM) / constant::c / constant::c;  // ç›¸å¯¹è®ºæ•ˆåº”è¯¯å·®æ”¹æ­£
     double delta_trDot = F * ephem.ecc * sqrt(ephem.A) * cos(ek) * ekDot;
     this->clkRate = ephem.af[1] + 2 * ephem.af[2] * SoWSubtraction(t.secOfWeek, ephem.toc) + delta_trDot;
 }
@@ -304,182 +200,26 @@ bool SatPos::Overdue(const GPSTIME t, const  EPHEMERIS& ephem)
     if(ephem.satSys == GNSS::GPS)
     {
         if (fabs(t - ephem.toeG) < 7500)
-            //ĞÇÀúÎ´¹ıÆÚ
+            //æ˜Ÿå†æœªè¿‡æœŸ
             return false;
     }
     else if(ephem.satSys == GNSS::BDS)
     {
         BDSTIME t0 = GpsTime2BdsTime(t);
         if (fabs(t0 - ephem.toeB) < 3900)
-            //ĞÇÀúÎ´¹ıÆÚ
+            //æ˜Ÿå†æœªè¿‡æœŸ
             return false;
     }
     return true;
 }
 
-
-////GPS
-//void SatPos::CalGps(const GPSTIME t, const GPSEPHEM& gpsEphem)
-//{
-//	PARAS gParas = CalculateParas(t, gpsEphem);
-//	GpsPosVel(t, gpsEphem, gParas);
-//	GpsClockBias(t, gParas.ek, gpsEphem);
-//	GpsClockRate(t, gParas.ek, gParas.ekDot, gpsEphem);
-//}
-//
-//void SatPos::GpsPosVel(const GPSTIME t, const GPSEPHEM& gpsEphem, PARAS& gPara)
-//{
-//	/////////////////////////////////
-//	//		GPSÎÀĞÇÎ»ÖÃËÙ¶È¼ÆËã
-//	/////////////////////////////////
-//	//GPSÎÀĞÇÔÚµØÇòµØ¹Ì×ø±êÏµÖĞµÄÎ»ÖÃ¼ÆËã
-//	this->satXyz.x = gPara.xy0[0] * cos(gPara.omegak) - gPara.xy0[1] * cos(gPara.ik) * sin(gPara.omegak);
-//	this->satXyz.y = gPara.xy0[0] * sin(gPara.omegak) + gPara.xy0[1] * cos(gPara.ik) * cos(gPara.omegak);
-//	this->satXyz.z = gPara.xy0[1] * sin(gPara.ik);
-//
-//	//GPSÎÀĞÇÔÚµØÇòµØ¹Ì×ø±êÏµÖĞµÄËÙ¶È¼ÆËã
-//	this->satV[0] = gPara.xkDot * cos(gPara.omegak) - this->satXyz.y * gPara.omegakDot - (gPara.ykDot * cos(gPara.ik) - this->satXyz.z * gPara.ikDot) * sin(gPara.omegak);
-//	this->satV[1] = gPara.xkDot * sin(gPara.omegak) + this->satXyz.x * gPara.omegakDot + (gPara.ykDot * cos(gPara.ik) - this->satXyz.z * gPara.ikDot) * cos(gPara.omegak);
-//	this->satV[2] = gPara.ykDot * sin(gPara.ik) + gPara.xy0[1] * gPara.ikDot * cos(gPara.ik);
-//}
-//
-//void SatPos::GpsClockBias(const GPSTIME t, double ek, const GPSEPHEM& gpsEphem)
-//{
-//	double F = -2.0 * sqrt(wgs84.GM) / constant::c / constant::c;
-//	double delta_tr = F * gpsEphem.ecc * sqrt(gpsEphem.A) * sin(ek);//Ïà¶ÔÂÛĞ§Ó¦Îó²î¸ÄÕıÏî
-//	double delta_t = SoWSubtraction(t.secOfWeek, gpsEphem.toc);
-//	this->clkBias = gpsEphem.af[0] + gpsEphem.af[1] * delta_t + gpsEphem.af[2] * delta_t * delta_t + delta_tr /*- tgd*/;
-//}
-//
-//void SatPos::GpsClockRate(const GPSTIME t, double ek, double ekDot, const GPSEPHEM& gpsEphem)
-//{
-//	double F = -2.0 * sqrt(wgs84.GM) / constant::c / constant::c;//Ïà¶ÔÂÛĞ§Ó¦Îó²î¸ÄÕı
-//	double delta_trDot = F * gpsEphem.ecc * sqrt(gpsEphem.A) * cos(ek) * ekDot;
-//	this->clkRate = gpsEphem.af[1] + 2 * gpsEphem.af[2] * SoWSubtraction(t.secOfWeek, gpsEphem.toc) + delta_trDot;
-//}
-//
-//bool SatPos::GpsOod(const GPSTIME t, const GPSEPHEM& gpsEphem)
-//{
-//	if (fabs(t - gpsEphem.toe) > 7200.0)
-//		//ĞÇÀú¹ıÆÚ
-//		return false;
-//	else
-//		return true;
-//}
-//
-////BDS
-//void SatPos::CalBds(const GPSTIME t, const BDSEPHEM& bdsEphem)
-//{
-//	BDSTIME bdst = GpsTime2BdsTime(t);
-//	PARAS bPara = CalculateParas(bdst, bdsEphem);
-//	BdsPosVel(bdst, bdsEphem, bPara);
-//	BdsClockBias(bdst, bPara.ek, bdsEphem);
-//	BdsClockRate(bdst, bPara.ek, bPara.ekDot, bdsEphem);
-//}
-//
-//void SatPos::BdsPosVel(const BDSTIME t, const BDSEPHEM& bdsEphem, PARAS& bPara)
-//{
-//	/////////////////////////////////
-//	//		BDSÎÀĞÇÎ»ÖÃËÙ¶È¼ÆËã
-//	/////////////////////////////////
-//
-//	//BDS MEO/IGSOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄÎ»ÖÃºÍËÙ¶È¼ÆËã
-//	if (!bdsEphem.isGeo())
-//	{
-//		//BDS MEO/IGSOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄÎ»ÖÃ¼ÆËã
-//		satXyz.x = bPara.xy0[0] * cos(bPara.omegak) - bPara.xy0[1] * cos(bPara.ik) * sin(bPara.omegak);
-//		satXyz.y = bPara.xy0[0] * sin(bPara.omegak) + bPara.xy0[1] * cos(bPara.ik) * cos(bPara.omegak);
-//		satXyz.z = bPara.xy0[1] * sin(bPara.ik);
-//
-//		//BDS MEO/IGSOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄËÙ¶È¼ÆËã
-//		satV[0] = bPara.xkDot * cos(bPara.omegak) - bPara.xy0[0] * sin(bPara.omegak) * bPara.omegakDot - bPara.ykDot * cos(bPara.ik) * sin(bPara.omegak) + bPara.xy0[1] * cos(bPara.ik) * sin(bPara.omegak) * bPara.ikDot - bPara.xy0[1] * cos(bPara.ik) * cos(bPara.omegak) * bPara.omegakDot;
-//		satV[1] = bPara.xkDot * sin(bPara.omegak) + bPara.xy0[0] * cos(bPara.omegak) * bPara.omegakDot + bPara.ykDot * cos(bPara.ik) * cos(bPara.omegak) - bPara.xy0[1] * sin(bPara.ik) * sin(bPara.omegak) * bPara.ikDot - bPara.xy0[1] * cos(bPara.ik) * sin(bPara.omegak) * bPara.omegakDot;
-//		satV[2] = bPara.ykDot * sin(bPara.ik) + bPara.xy0[1] * sin(bPara.ik) * bPara.ikDot;
-//	}
-//	//BDS MEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄÎ»ÖÃºÍËÙ¶È¼ÆËã
-//	else if (bdsEphem.isGeo())
-//	{
-//		bPara.omegak = bdsEphem.omega0 + bdsEphem.omegaDot * bPara.tk - cgcs2000.omega * bdsEphem.toe.secOfWeek;
-//
-//		//BDS GEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄÎ»ÖÃ¼ÆËã
-//		//GEOÎÀĞÇÔÚ×Ô¶¨Òå×ø±êÏµÖĞµÄ×ø±ê
-//		CMatrix XyzGK(3, 1);
-//		XyzGK.mat[0] = bPara.xy0[0] * cos(bPara.omegak) - bPara.xy0[1] * cos(bPara.ik) * sin(bPara.omegak);
-//		XyzGK.mat[1] = bPara.xy0[0] * sin(bPara.omegak) + bPara.xy0[1] * cos(bPara.ik) * cos(bPara.omegak);
-//		XyzGK.mat[2] = bPara.xy0[1] * sin(bPara.ik);
-//
-//		CMatrix Rx(3, 3);
-//		double xRad = -5.0 * constant::pi / 180.0;
-//		Rx.mat[0] = 1; Rx.mat[1] = 0; Rx.mat[2] = 0;
-//		Rx.mat[3] = 0; Rx.mat[4] = cos(xRad); Rx.mat[5] = sin(xRad);
-//		Rx.mat[6] = 0; Rx.mat[7] = -sin(xRad); Rx.mat[8] = cos(xRad);
-//
-//		CMatrix Rz(3, 3);
-//		double zRad = cgcs2000.omega * bPara.tk;
-//		Rz.mat[0] = cos(zRad); Rz.mat[1] = sin(zRad); Rz.mat[2] = 0;
-//		Rz.mat[3] = -sin(zRad); Rz.mat[4] = cos(zRad); Rz.mat[5] = 0;
-//		Rz.mat[6] = 0; Rz.mat[7] = 0; Rz.mat[8] = 1;
-//
-//		//GEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄ×ø±ê
-//		CMatrix xyzMat(3, 3);
-//		xyzMat = Rz * (Rx * XyzGK);
-//		memcpy(&this->satXyz, xyzMat.mat, sizeof(XYZ));
-//
-//		//BDS GEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄËÙ¶È¼ÆËã
-//		//GEOÎÀĞÇÔÚ×Ô¶¨Òå×ø±êÏµÖĞµÄËÙ¶È
-//		bPara.omegakDot = bdsEphem.omegaDot;
-//
-//		CMatrix vGK(3, 1);
-//		vGK.mat[0] = bPara.xkDot * cos(bPara.omegak) - bPara.xy0[0] * sin(bPara.omegak) * bPara.omegakDot - bPara.ykDot * cos(bPara.ik) * sin(bPara.omegak) + bPara.xy0[1] * cos(bPara.ik) * sin(bPara.omegak) * bPara.ikDot - bPara.xy0[1] * cos(bPara.ik) * cos(bPara.omegak) * bPara.omegakDot;
-//		vGK.mat[1] = bPara.xkDot * sin(bPara.omegak) + bPara.xy0[0] * cos(bPara.omegak) * bPara.omegakDot + bPara.ykDot * cos(bPara.ik) * cos(bPara.omegak) - bPara.xy0[1] * sin(bPara.ik) * sin(bPara.omegak) * bPara.ikDot - bPara.xy0[1] * cos(bPara.ik) * sin(bPara.omegak) * bPara.omegakDot;
-//		vGK.mat[2] = bPara.ykDot * sin(bPara.ik) + bPara.xy0[1] * sin(bPara.ik) * bPara.ikDot;
-//
-//		CMatrix RzDot(3, 3);
-//		RzDot.mat[0] = -sin(zRad); RzDot.mat[1] = cos(zRad); RzDot.mat[2] = 0;
-//		RzDot.mat[3] = -cos(zRad); RzDot.mat[4] = -sin(zRad); RzDot.mat[5] = 0;
-//		RzDot.mat[6] = 0; RzDot.mat[7] = 0; RzDot.mat[8] = 0;
-//		RzDot = RzDot * cgcs2000.omega;
-//
-//		//GEOÎÀĞÇÔÚBDCS×ø±êÏµÖĞµÄËÙ¶È
-//		CMatrix vMat(3, 1);
-//		vMat = RzDot * (Rx * XyzGK) + Rz * (Rx * vGK);
-//		memcpy(&this->satV, vMat.mat, 3 * sizeof(double));
-//	}
-//}
-//
-//void SatPos::BdsClockBias(const BDSTIME t, double ek, const BDSEPHEM& bdsEphem)
-//{
-//	double F = -2.0 * sqrt(cgcs2000.GM) / constant::c / constant::c;
-//	double delta_tr = F * bdsEphem.ecc * bdsEphem.rootA * sin(ek);//Ïà¶ÔÂÛĞ§Ó¦Îó²î¸ÄÕıÏî
-//	double delta_t = SoWSubtraction(t.secOfWeek, bdsEphem.toc);
-//	this->clkBias = bdsEphem.a[0] + bdsEphem.a[1] * delta_t + bdsEphem.a[2] * delta_t * delta_t + delta_tr /*- tgd*/;
-//}
-//
-//void SatPos::BdsClockRate(const BDSTIME t, double ek, double ekDot, const BDSEPHEM& bdsEphem)
-//{
-//	double F = -2.0 * sqrt(cgcs2000.GM) / constant::c / constant::c;//Ïà¶ÔÂÛĞ§Ó¦Îó²î¸ÄÕı
-//	double delta_trDot = F * bdsEphem.ecc * bdsEphem.rootA * cos(ek) * ekDot;
-//	this->clkRate = bdsEphem.a[1] + 2 * bdsEphem.a[2] * SoWSubtraction(t.secOfWeek, bdsEphem.toc) + delta_trDot;
-//}
-//
-//bool SatPos::BdsOod(const GPSTIME t, const  BDSEPHEM& bdsEphem)
-//{
-//	BDSTIME t0 = GpsTime2BdsTime(t);
-//	if (fabs(t0 - bdsEphem.toe) > 3600.0)
-//		//ĞÇÀú¹ıÆÚ
-//		return false;
-//	else
-//		return true;
-//}
-
-
-void SatPos::CalSatE(const XYZ& rcvrXyz, CoorSys& coor)
+void SatPos::CalSatEl(const XYZ& rcvrXyz, CoorSys& coor)
 {
-    //ÎÀĞÇ¸ß¶È½Ç¼ÆËã
-    BLH rcvrBlh = XYZ2BLH(rcvrXyz, coor);//½ÓÊÕ»úµÄ´óµØ×ø±ê
-    CMatrix trans(3, 3);//×ª»»¾ØÕó
-    CMatrix line(3, 1);//½ÓÊÕ»úÓëÎÀĞÇµÄÁ¬Ïß
-    CMatrix satxyz(3, 1);//ÎÀĞÇÔÚÕ¾ĞÄ×ø±êÏµÖĞµÄ×ø±ê
+    //å«æ˜Ÿé«˜åº¦è§’è®¡ç®—
+    BLH rcvrBlh = XYZ2BLH(rcvrXyz, coor);  // æ¥æ”¶æœºçš„å¤§åœ°åæ ‡
+    CMatrix trans(3, 3);  // è½¬æ¢çŸ©é˜µ
+    CMatrix line(3, 1);  // æ¥æ”¶æœºä¸å«æ˜Ÿçš„è¿çº¿
+    CMatrix satxyz(3, 1);  // å«æ˜Ÿåœ¨ç«™å¿ƒåæ ‡ç³»ä¸­çš„åæ ‡
     
     trans.mat[0] = -sin(rcvrBlh.B) * cos(rcvrBlh.L);
     trans.mat[1] = -sin(rcvrBlh.B) * sin(rcvrBlh.L);
@@ -490,30 +230,30 @@ void SatPos::CalSatE(const XYZ& rcvrXyz, CoorSys& coor)
     trans.mat[6] = cos(rcvrBlh.B) * cos(rcvrBlh.L);
     trans.mat[7] = cos(rcvrBlh.B) * sin(rcvrBlh.L);
     trans.mat[8] = sin(rcvrBlh.B);
-    trans.check();//B=0 L=0 H=0µÄÇé¿ö
+    trans.check();  // B=0 L=0 H=0çš„æƒ…å†µ
     
     line.mat[0] = this->satXyz.x - rcvrXyz.x;
     line.mat[1] = this->satXyz.y - rcvrXyz.y;
     line.mat[2] = this->satXyz.z - rcvrXyz.z;
     
-    satxyz = trans * line;//ÎÀĞÇÔÚÕ¾ĞÄ×ø±êÏµÖĞµÄ×ø±ê
+    satxyz = trans * line;  // å«æ˜Ÿåœ¨ç«™å¿ƒåæ ‡ç³»ä¸­çš„åæ ‡
     
-    this->eleAngle = atan(satxyz.mat[2] / sqrt(satxyz.mat[0] * satxyz.mat[0] + satxyz.mat[1] * satxyz.mat[1]));//ÎÀĞÇ¸ß¶È½Ç
+    this->eleAngle = atan(satxyz.mat[2] / sqrt(satxyz.mat[0] * satxyz.mat[0] + satxyz.mat[1] * satxyz.mat[1]));  // å«æ˜Ÿé«˜åº¦è§’
 }
 
 void SatPos::Hopefield(const XYZ& rcvrXyz, CoorSys& coor)
 {
     BLH rcvrBlh = XYZ2BLH(rcvrXyz, coor);
-    double H = rcvrBlh.H;//½ÓÊÕ»ú´óµØ¸ß£¬·½±ãºóÃæÊéĞ´
+    double H = rcvrBlh.H;  // æ¥æ”¶æœºå¤§åœ°é«˜ï¼Œæ–¹ä¾¿åé¢ä¹¦å†™
     if (H > 1e+4)
     {
         this->tropDelay = 10;
-        return ;//²âÕ¾¸ß¶È²»ÔÚ¶ÔÁ÷²ã·¶Î§
+        return ;  // æµ‹ç«™é«˜åº¦ä¸åœ¨å¯¹æµå±‚èŒƒå›´
     }
-    double H0 = 0.0;//m º£Æ½Ãæ
-    double T0 = 20.0 + 273.16;//K ÎÂ¶È
-    double p0 = 1013.25;//mbar ÆøÑ¹
-    double RH0 = 0.5;//Ïà¶ÔÊª¶È
+    double H0 = 0.0;  // m æµ·å¹³é¢
+    double T0 = 20.0 + 273.16;  // K æ¸©åº¦
+    double p0 = 1013.25;  // mbar æ°”å‹
+    double RH0 = 0.5;  // ç›¸å¯¹æ¹¿åº¦
     
     double RH = RH0 * exp(-0.0006369 * (H - H0));
     double p = p0 * pow(1 - 2.26e-5 * (H - H0), 5.225);
@@ -525,13 +265,18 @@ void SatPos::Hopefield(const XYZ& rcvrXyz, CoorSys& coor)
     double Kd = 155.2e-7 * p / T * (hd - H);
     
     double E = this->eleAngle * 180.0 / constant::pi;
-    double deltaD = Kd / sin(sqrt(E * E + 6.25) / 180.0 * constant::pi);
-    double deltaW = Kw / sin(sqrt(E * E + 2.25) / 180.0 * constant::pi);
+    double deltaD = Kd / sin(sqrt(E*E + 6.25) * constant::D2R);
+    double deltaW = Kw / sin(sqrt(E*E + 2.25) * constant::D2R);
     this->tropDelay = deltaD + deltaW;
 }
 
 
-
-
-
-
+int EpkPos::FindSatPosIndex(int prn, GNSS sys)
+{
+    for (int i = 0; i < MAXCHANNELNUM; ++i)
+    {
+        if (satPos[i].prn == prn && satPos[i].sys == sys)
+            return i;  // è¿”å›æ‰€æ‰¾åˆ°çš„satObsæ•°ç»„ä¸‹æ ‡
+    }
+    return 114514;  // æ²¡æ‰¾åˆ°å°±è¿”å›114514;
+}
