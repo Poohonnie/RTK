@@ -287,7 +287,7 @@ int Client::ServerRTK()
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
     
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202204292210.oem719.rtk.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202204292308.oem719.rtk.pos)", "w");
     
     if (!CSocketDecode::OpenSocket(sock[0], config.iptIP[0], port[0]))
     {
