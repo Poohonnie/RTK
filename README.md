@@ -1,8 +1,6 @@
-# SPP
-Standard Point Positioning 标准单点定位
+# RTK
+Real Time Kenimatic 实时相对定位
 
-武汉大学测绘学院导航工程卫星导航程序设计1
+本项目为武汉大学测绘学院导航工程 卫星导航算法与程序设计2 课程结课作业
 
-Run是网络接收数据进行单点定位；FileSpp是文件读取数据进行单点定位。
-
-目前只实现了控制台和文件输出，没有图形界面。
+更改client.config的参数即可进入不同程序, 包括对数据文件的SPP和RTK 以及 网络通信数据的SPP和RTK, 具体看代码注释
