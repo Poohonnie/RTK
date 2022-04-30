@@ -6,7 +6,7 @@
 #include "SPP.h"
 #include <cmath>
 
-void SPP::ExtendMatB(CMatrix& B, int total) const
+void SPP::ExtendMatB(CMatrix &B, int total) const
 {
     //0:GPS 1:BDS 2:GLONASS 3:Galileo
     double sysB[4][MAXCHANNELNUM]{};  // 各卫星系统在B矩阵中的系数，这里按最大的创建，后续可以从中截取
@@ -14,9 +14,9 @@ void SPP::ExtendMatB(CMatrix& B, int total) const
     //赋1,并扩展B矩阵
     int sysCount{};
     int curTotal{};
-    for(int i = 0; i < 4; ++i)
+    for (int i = 0; i < 4; ++i)
     {
-        if(sysNum[i])
+        if (sysNum[i])
         {
             for (int j = 0; j < sysNum[i] && j < total; j++)
                 sysB[i][j + curTotal] = 1;
@@ -27,12 +27,12 @@ void SPP::ExtendMatB(CMatrix& B, int total) const
     }
 }
 
-void SPP::ExtendDeltaX(CMatrix& deltaX) const
+void SPP::ExtendDeltaX(CMatrix &deltaX) const
 {
     double clk[1] = {};
-    for(int i = 0; i < 2; ++i)
+    for (int i = 0; i < 2; ++i)
     {
-        if(!sysNum[i])
+        if (!sysNum[i])
         {
             //卫星数为0，说明扩展B矩阵的时候没有考虑他
             //所以要把0钟差再作为最终结果扩展进去
@@ -41,7 +41,7 @@ void SPP::ExtendDeltaX(CMatrix& deltaX) const
     }
 }
 
-int SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw, CONFIG& config)
+int SPP::StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
 {
     this->t = raw.epkObs.t;
     
@@ -191,7 +191,7 @@ int SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw, CONFIG& config)
         calTimes++;  // 迭代计数+1
     } while (sqrt(deltaX.mat[0] * deltaX.mat[0] + deltaX.mat[1] * deltaX.mat[1] + deltaX.mat[2] * deltaX.mat[2]) >
              1e-4 && calTimes < 10);
-    if(calTimes > 9)  // 说明没有正常收敛, SPP结果不可用
+    if (calTimes > 9)  // 说明没有正常收敛, SPP结果不可用
         return -114514;
     
     //最终定位结果
@@ -220,7 +220,7 @@ int SPP::StdPntPos(RAWDATA& raw, EPKGFMW& epkGfmw, CONFIG& config)
     return 0;  // 计算成功, 正常返回
 }
 
-void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw, CONFIG& config)
+void SPP::StdPntVel(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
 {
     int usfNum = 0;  // 可用卫星计数
     double arrB[MAXCHANNELNUM * 4] = {};  // 先拿出这么大来，待会再从数组里截取可用的数据下来创建矩阵
@@ -297,8 +297,8 @@ void SPP::StdPntVel(RAWDATA& raw, EPKGFMW& epkGfmw, CONFIG& config)
 
 void SPP::check()
 {
-	if (fabs(sttnBlh.H) > 1e+4 )
-	{
-		memset(this, 0, sizeof(SPP));
-	}
+    if (fabs(sttnBlh.H) > 1e+4)
+    {
+        memset(this, 0, sizeof(SPP));
+    }
 }

@@ -3,7 +3,7 @@
 
 int main()
 {
-	Client client{};
+    Client client{};
     client.Run();
-	return 0;
+    return 0;
 }

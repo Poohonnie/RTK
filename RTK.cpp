@@ -9,21 +9,21 @@ void RTK::SelectRefSat()
     memset(&ddObs.selected, 0, sizeof(bool) * 4);// 标记本历元参考星未选取成功
     
     // 检查上一历元参考星是否满足条件
-    for(int k = 0; k < 2; ++k)
+    for (int k = 0; k < 2; ++k)
     {
-        GNSS sys = (GNSS)k;
+        GNSS sys = (GNSS) k;
         int prn = ddObs.refSatPrn[k];  // 上一历元参考星prn号
         if (prn < 1)  // 说明上一历元没有参考星? 可能说明是第一个历元
             continue;
         
-        for(int i = 0; i < sdObs.sdNum; ++i)
+        for (int i = 0; i < sdObs.sdNum; ++i)
         {
-            if(sdObs.satSd[i].prn != prn || sdObs.satSd[i].sys != sys || !sdObs.satSd[i].valid)
+            if (sdObs.satSd[i].prn != prn || sdObs.satSd[i].sys != sys || !sdObs.satSd[i].valid)
                 // 说明这颗卫星不是上一历元的参考星 或 观测值不可用
                 continue;
             // 将上一历元参考星继承至这个历元
             int rIndex = spp[0].epkPos.FindSatPosIndex(prn, sys);  // 卫星定位结果, 求单差的时候已经确认一定有结果
-            if(sdObs.satSd[i].valid && spp[0].epkPos.satPos[rIndex].eleAngle > 40*constant::D2R)
+            if (sdObs.satSd[i].valid && spp[0].epkPos.satPos[rIndex].eleAngle > 40 * constant::D2R)
             {
                 // 高度角大于40°则继承
                 ddObs.refSatIndex[k] = i;
@@ -33,24 +33,24 @@ void RTK::SelectRefSat()
         }
     }
     
-    for(int k = 0; k < 2; ++k)
+    for (int k = 0; k < 2; ++k)
     {
         
-        if(ddObs.refSatPrn[k] == sdObs.satSd[ddObs.refSatIndex[k]].prn &&
-            sdObs.satSd[ddObs.refSatIndex[k]].sys == (GNSS)k)
+        if (ddObs.refSatPrn[k] == sdObs.satSd[ddObs.refSatIndex[k]].prn &&
+            sdObs.satSd[ddObs.refSatIndex[k]].sys == (GNSS) k)
             // 参考星已选取好, 即继承自上个历元
             continue;
         
-        double maxEleAngle = 40*constant::D2R;  // 当前最大的高度角, 初始为40°
+        double maxEleAngle = 40 * constant::D2R;  // 当前最大的高度角, 初始为40°
         for (int i = 0; i < sdObs.sdNum; ++i)
         {
             // 对单差观测值sdObs进行遍历
             // epkObs, epkPos, satSd, gfmw存储的卫星顺序和数目全部相同
             // 计算单差的时候已经确认过卫星位置计算完毕
-        
+            
             int prn = sdObs.satSd[i].prn;
             GNSS sys = sdObs.satSd[i].sys;
-            if(sys != (GNSS) k)
+            if (sys != (GNSS) k)
                 // 当前单差观测值卫星系统和要选参考星的卫星系统不符
                 continue;
             int rIndex = spp[0].epkPos.FindSatPosIndex(prn, sys);  // 流动站epkPos索引下标
@@ -72,7 +72,7 @@ void RTK::SelectRefSat()
     }
 }
 
-void DDObs::GetDDObs(const SDObs& sdObs)
+void DDObs::GetDDObs(const SDObs &sdObs)
 {
     // 清空上一历元双差观测值, 保留参考星选取信息
     memset(&this->ddPrn, 0, MAXCHANNELNUM * sizeof(int));
@@ -112,12 +112,14 @@ void DDObs::GetDDObs(const SDObs& sdObs)
     }
 }
 
-int RTK::CalFixedSolution(RAWDATA& roverRaw, RAWDATA& baseRaw, EPKGFMW& rEpkGfmw, EPKGFMW& bEpkGfmw, CONFIG& config)
+int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw, EPKGFMW &bEpkGfmw, CONFIG &config)
 {
     // 初始化, 清空上一历元结果
     memset(&pos, 0, sizeof(XYZ));
     memset(&resAmb, 0, sizeof(double) * 2);
-    valid = false; sol = 0; ratio = 0.0;
+    valid = false;
+    sol = 0;
+    ratio = 0.0;
     
     t = roverRaw.epkObs.t;  // 确定观测时间
     int iter_fix{};  // 固定解迭代次数

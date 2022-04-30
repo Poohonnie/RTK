@@ -16,7 +16,10 @@ namespace constant
     const double wl_b3 = c / fq_b3;
 }
 
-enum class GNSS { GPS, BDS, GLONASS, Galileo };
+enum class GNSS
+{
+    GPS, BDS, GLONASS, Galileo
+};
 
 /***********************************************************************
  *                              配置表
@@ -63,7 +66,8 @@ struct GPSTIME
     double secOfWeek;  // GPS周秒
     
     void check();  // 自检
-    double operator-(const GPSTIME& sub) const;
+    double operator-(const GPSTIME &sub) const;
+    
     GPSTIME operator-(double sub) const;
 };
 
@@ -73,27 +77,27 @@ struct BDSTIME : public GPSTIME
 
 double SoWSubtraction(double t, double toc);  // 两个GPS周内秒的减法
 
-double CommonTime2UT(const COMMONTIME&);  // 通用时转世界时
+double CommonTime2UT(const COMMONTIME &);  // 通用时转世界时
 
-MJDTIME CommonTime2MjdTime(const COMMONTIME&);  // 通用时转简化儒略日
-COMMONTIME MjdTime2CommonTime(const MJDTIME&);  // 简化儒略日转通用时
+MJDTIME CommonTime2MjdTime(const COMMONTIME &);  // 通用时转简化儒略日
+COMMONTIME MjdTime2CommonTime(const MJDTIME &);  // 简化儒略日转通用时
 
-GPSTIME MjdTime2GpsTime(const MJDTIME&);  // 简化儒略日转GPS时
-MJDTIME GpsTime2MjdTime(const GPSTIME&);  // GPS时转简化儒略日
+GPSTIME MjdTime2GpsTime(const MJDTIME &);  // 简化儒略日转GPS时
+MJDTIME GpsTime2MjdTime(const GPSTIME &);  // GPS时转简化儒略日
 
-GPSTIME CommonTime2GpsTime(const COMMONTIME&);  // 通用时转GPS时
-COMMONTIME GpsTime2CommonTime(const GPSTIME&);  // GPS时转通用时
-
-
-BDSTIME GpsTime2BdsTime(const GPSTIME&);  // GPS时 转 北斗时
-GPSTIME BdsTime2GpsTime(const BDSTIME&);  // 北斗时 转 GPS时
+GPSTIME CommonTime2GpsTime(const COMMONTIME &);  // 通用时转GPS时
+COMMONTIME GpsTime2CommonTime(const GPSTIME &);  // GPS时转通用时
 
 
-BDSTIME MjdTime2BdsTime(const MJDTIME&);  // 简化儒略日转BDS时
-MJDTIME BdsTime2MjdTime(const BDSTIME&);  // BDS时转简化儒略日
+BDSTIME GpsTime2BdsTime(const GPSTIME &);  // GPS时 转 北斗时
+GPSTIME BdsTime2GpsTime(const BDSTIME &);  // 北斗时 转 GPS时
 
-BDSTIME CommonTime2BdsTime(const COMMONTIME&);  // 通用时转BDS时
-COMMONTIME BdsTime2CommonTime(const BDSTIME&);  // BDS时转通用时
+
+BDSTIME MjdTime2BdsTime(const MJDTIME &);  // 简化儒略日转BDS时
+MJDTIME BdsTime2MjdTime(const BDSTIME &);  // BDS时转简化儒略日
+
+BDSTIME CommonTime2BdsTime(const COMMONTIME &);  // 通用时转BDS时
+COMMONTIME BdsTime2CommonTime(const BDSTIME &);  // BDS时转通用时
 
 /***********************************************************************
  *                              坐标系统
@@ -122,6 +126,7 @@ struct XYZ
     XYZ operator+(const XYZ &add) const;  // 坐标加法
     XYZ operator-(const XYZ &sub) const;  // 坐标减法
 };
+
 struct BLH
 {
     double L;  // 经度 单位为弧度rad
@@ -129,9 +134,9 @@ struct BLH
     double H;  // 高度 单位为米
 };
 
-XYZ BLH2XYZ(const BLH&, const CoorSys&);
+XYZ BLH2XYZ(const BLH &, const CoorSys &);
 
-BLH XYZ2BLH(const XYZ&, const CoorSys&);
+BLH XYZ2BLH(const XYZ &, const CoorSys &);
 
 double Deg2Rad(double deg, double min, double sec);
 
@@ -140,17 +145,17 @@ void CalDNEU(const XYZ &refXyz, const XYZ &sttnXyz, double *dNEU);  // 计算测
 /*********************************************************************
  *                              矩阵
  *********************************************************************/
- 
+
 class CMatrix
 {
 public:
     int rows, cols;
-    double* mat;
+    double *mat;
     
     CMatrix();  // 默认构造函数
-    CMatrix(const double* Mat, int Rows, int Cols);  // 构造函数
+    CMatrix(const double *Mat, int Rows, int Cols);  // 构造函数
     CMatrix(int Rows, int Cols);  // 全0矩阵构造函数
-    CMatrix(const CMatrix&);  // 拷贝构造函数
+    CMatrix(const CMatrix &);  // 拷贝构造函数
     virtual ~CMatrix();  // 析构函数
     static CMatrix Eye(int n);  // 单位阵
     static CMatrix Zeros(int m, int n);  // 全零阵
@@ -162,19 +167,19 @@ public:
     // 判断是否为方阵
     void check() const;  // 关于+0 -0的判断
     
-    CMatrix operator+(const CMatrix& addMat) const;  // 矩阵加法
-    CMatrix operator-(const CMatrix& subMat) const;  // 矩阵减法
-    CMatrix& operator=(const CMatrix& origin);  // 矩阵赋值
-    CMatrix& operator+=(const CMatrix& addMat);  // +=
-    CMatrix& operator-=(const CMatrix& subMat);  // -=
-    CMatrix operator*(const CMatrix& multiplierMat) const;  // 矩阵乘法
+    CMatrix operator+(const CMatrix &addMat) const;  // 矩阵加法
+    CMatrix operator-(const CMatrix &subMat) const;  // 矩阵减法
+    CMatrix &operator=(const CMatrix &origin);  // 矩阵赋值
+    CMatrix &operator+=(const CMatrix &addMat);  // +=
+    CMatrix &operator-=(const CMatrix &subMat);  // -=
+    CMatrix operator*(const CMatrix &multiplierMat) const;  // 矩阵乘法
     CMatrix operator*(double num) const;  // 矩阵数乘
     
     CMatrix Inv() const;  // 矩阵求逆，返回值为矩阵的逆
     CMatrix Trans() const;  // 矩阵转置，返回值为转置矩阵
     void SetZero() const;  // 将矩阵置零
     void AddRow(double *vec/*需要添加的行数组*/, int aimRow/*添加到第几行*/);  // 矩阵扩展，加一行
-    void AddCol(double* vec/*需要添加的列数组*/, int aimCol/*添加到第几列*/);  // //矩阵扩展，加一列
+    void AddCol(double *vec/*需要添加的列数组*/, int aimCol/*添加到第几列*/);  // //矩阵扩展，加一列
     void SubRow(int aimRow/*去掉第几行*/);  // 去掉一行
     void SubCol(int aimCol/*去掉第几列*/);  // 去掉一列
 };

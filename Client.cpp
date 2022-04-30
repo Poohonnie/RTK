@@ -72,7 +72,7 @@ int Client::FileSPP()
     while (true)
     {
         flag = fileDecode.DecodeOem719Msg();
-        if(flag == -114514)
+        if (flag == -114514)
             break;
         if (flag != 43)
             // CRC校验失败
@@ -143,7 +143,7 @@ int Client::ServerSPP()
         {
             detectOutlier.DetectOutlier(socketDecode->raw);
             int flag = spp.StdPntPos(socketDecode->raw, detectOutlier.curEpk, config);
-            if(flag == -114514)  // SPP定位失败
+            if (flag == -114514)  // SPP定位失败
                 continue;
             spp.StdPntVel(socketDecode->raw, detectOutlier.curEpk, config);
             
@@ -266,7 +266,7 @@ int Client::FileRTK()
                 rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
 */
     }
-    
+
 //    fclose(outFp);
     return 0;
 }
@@ -305,7 +305,7 @@ int Client::ServerRTK()
     {
         if (lenRem[0] < 51200)
             Sleep(980);
-        if(lenRem[1] > 204800)
+        if (lenRem[1] > 204800)
         {
             memset(&buf[1], 0, 204800 * sizeof(unsigned char));
             lenRem[1] = 0;
@@ -320,7 +320,7 @@ int Client::ServerRTK()
         val[0] = socketDecode[0].DecodeOem719Msg(buf[0], curLen[0], lenRem[0]);  // 网络接收到的报文解码
         dtime = socketDecode[0].t - lastBase.t;  // 看看上一历元数据是不是来自未来的, 来自未来这一历元就不读基准站了
         int iter{};
-        while(iter < 3 && dtime > 0.5)
+        while (iter < 3 && dtime > 0.5)
         {
             curLen[1] = recv(sock[1], (char *) buf[1] + lenRem[1], 204800 - lenRem[1], 0);
             val[1] = socketDecode[1].DecodeOem719Msg(buf[1], curLen[1], lenRem[1]);  // 网络接收到的报文解码
@@ -340,7 +340,7 @@ int Client::ServerRTK()
             // 观测值粗差探测
             detectOutlier[0].DetectOutlier(socketDecode[0].raw);
             detectOutlier[1].DetectOutlier(socketDecode[1].raw);
-    
+            
             rtk.CalFixedSolution(socketDecode[0].raw, socketDecode[1].raw,
                                  detectOutlier[0].curEpk, detectOutlier[1].curEpk, config);
             if (!rtk.valid)  // 定位结果异常
@@ -389,7 +389,7 @@ int Client::ServerRTK()
                     rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
         }
     }
-
+    
     fclose(outFp);
     return 0;
 }
