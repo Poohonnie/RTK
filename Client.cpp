@@ -275,8 +275,6 @@ int Client::ServerRTK()
     int curLen[2]{};  // 此次接收到的报文总长度
     unsigned char buf[2][204800]{};
     CSocketDecode socketDecode[2]{};  // 解码类
-    std::queue<CSocketDecode> roverDecode{};  // 流动站观测值raw队列
-    std::queue<CSocketDecode> baseDecode{};  // 基准站观测值raw队列
     CSocketDecode lastBase{};  // 上一历元的基准站数据
     CDetectOutlier detectOutlier[2]{};  // 粗差探测类
     SOCKET sock[2]{};  // 套接字
@@ -287,7 +285,7 @@ int Client::ServerRTK()
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
     
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202204292308.oem719.rtk.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202204292321.oem719.rtk.pos)", "w");
     
     if (!CSocketDecode::OpenSocket(sock[0], config.iptIP[0], port[0]))
     {
@@ -303,9 +301,9 @@ int Client::ServerRTK()
     }
     double dtime{};
     int epoch{};
-    while (epoch < 8 * 3600)
+    while (epoch < 10 * 3600)
     {
-        if (lenRem[0] < 51200)  // 大于0.5的话说明时间没对齐
+        if (lenRem[0] < 51200)
             Sleep(980);
         
         curLen[0] = recv(sock[0], (char *) buf[0] + lenRem[0], 204800 - lenRem[0], 0);  // 在余留的缓冲区基础上接收报文
@@ -318,11 +316,11 @@ int Client::ServerRTK()
         }
         val[0] = socketDecode[0].DecodeOem719Msg(buf[0], curLen[0], lenRem[0]);  // 网络接收到的报文解码
         val[1] = socketDecode[1].DecodeOem719Msg(buf[1], curLen[1], lenRem[1]);  // 网络接收到的报文解码
+        dtime = socketDecode[0].t - socketDecode[1].t;  // 时间间隔
         if (val[0] == 43 && val[1] == 43)
         {
-            dtime = socketDecode[0].t - socketDecode[1].t;  // 时间间隔
-            if (fabs(dtime) > 10.0)
-                continue;  // 基准站数据与流动站时间差太多
+            if (dtime < 0.5)
+                lastBase = socketDecode[1];  // 将该历元基准站数据保存起来, 作为下一历元的lastBase
             // 星历复制
             for (int i = 0; i < MAXGPSNUM; ++i)
                 socketDecode[0].raw.gpsEphem[i] = socketDecode[1].raw.gpsEphem[i];
@@ -337,7 +335,11 @@ int Client::ServerRTK()
                                  detectOutlier[0].curEpk, detectOutlier[1].curEpk, config);
             if (!rtk.valid)  // 定位结果异常
                 continue;
-    
+            if (fabs(dtime) > 10.0)
+            {
+                // 基准站数据与流动站时间差太多
+                rtk.pos = rtk.spp[0].sttnXyz;
+            }
             // 输出解算结果
             XYZ dXyz = rtk.pos - refXyz;
             double line = sqrt(dXyz.x * dXyz.x + dXyz.y * dXyz.y + dXyz.z * dXyz.z);
@@ -372,101 +374,13 @@ int Client::ServerRTK()
                    rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
                    dNEU[0], dNEU[1], dNEU[2],
                    rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-            fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
+            fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
                     rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
                     dNEU[0], dNEU[1], dNEU[2],
                     rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
         }
     }
 
-/*
-    while (true)
-    {
-        if (lenRem[0] < 51200)  // 控制在51200字节内, 防止字节溢出
-            Sleep(960);
-    
-        curLen[0] = recv(sock[0], (char *) buf[0] + lenRem[0], 204800 - lenRem[0], 0);  // 在余留的缓冲区基础上接收报文
-        curLen[1] = recv(sock[1], (char *) buf[1] + lenRem[1], 204800 - lenRem[1], 0);  // 基准站同
-        if (curLen[0] < 0)
-        {
-            printf("Please check out the network.\n");
-            return -114514;
-        }
-        while(val != -114514)  // 流动站, 没有读到报文结尾 or CRC校验失败
-        {
-            val = socketDecode[0].DecodeOem719Msg(buf[0], curLen[0], lenRem[0]);  // 网络接收到的流动站报文解码
-            curLen[0] = 0;
-            if (val == 43)
-                roverDecode.push(socketDecode[0]);  // 往流动站观测值队列里加入刚解码出来的结果
-        }
-        val = 0;
-        while(val != -114514)  // 基准站, 没有读到报文结尾 or CRC校验失败
-        {
-            val = socketDecode[1].DecodeOem719Msg(buf[1], curLen[1], lenRem[1]);  // 网络接收到的流动站报文解码
-            curLen[1] = 0;
-            if (val == 43)
-                baseDecode.push(socketDecode[1]);  // 往基准站观测值队列里加入刚解码出来的结果
-        }
-        while(!roverDecode.empty())  // 流动站观测值队列不为空
-        {
-            socketDecode[0] = roverDecode.front();  // 将队列首的元素复制
-            roverDecode.pop();  // 弹出
-            double dtime = socketDecode[0].raw.epkObs.t - lastBase.raw.epkObs.t;  // 流动站数据和基准站数据之间的时间差
-    
-            if(baseDecode.empty())  // 这个历元基准站没有数据
-                break;
-            while (dtime > 0.5 && !baseDecode.empty())  // 一直读到超前于流动站当前历元的数据 或者时间差在0.5秒之内时停下(0.5秒内停下就是同历元)
-            {
-                socketDecode[1] = baseDecode.front();  // 将队列首的元素复制
-                baseDecode.pop();  // 弹出
-                dtime = socketDecode[0].raw.epkObs.t - socketDecode[1].raw.epkObs.t;  // 流动站数据减基准站数据 GPS时减法已重载
-                if (dtime < 0.5)
-                    lastBase = socketDecode[1];  // 将该历元基准站数据保存起来, 作为下一历元的lastBase
-                if (dtime < 0)
-                    continue;  // 读到来自未来的基准站数据
-            }
-            if(dtime > 10.0)  // 基站数据太旧
-                continue;
-            // 星历复制
-            for(int i = 0; i < MAXGPSNUM; ++i)
-                socketDecode[0].raw.gpsEphem[i] = socketDecode[1].raw.gpsEphem[i];
-            for(int i = 0; i < MAXBDSNUM; ++i)
-                socketDecode[0].raw.bdsEphem[i] = socketDecode[1].raw.bdsEphem[i];
-    
-            // RTK定位解算
-            // 观测值粗差探测
-            detectOutlier[0].DetectOutlier(socketDecode[0].raw);
-            detectOutlier[1].DetectOutlier(socketDecode[1].raw);
-    
-            rtk.CalFixedSolution(socketDecode[0].raw, socketDecode[1].raw,
-                                 detectOutlier[0].curEpk, detectOutlier[1].curEpk, config);
-            if (!rtk.valid)  // 定位结果异常
-                continue;
-    
-            // 输出解算结果
-            XYZ dXyz = rtk.pos - refXyz;
-    
-            char sol[50]{};  // 解的类型
-            switch(rtk.sol)
-            {
-                case 0:  // 单点解
-                    strcpy(sol, "Single");
-                    break;
-                case 1:  // 浮点解
-                    strcpy(sol, "Float");
-                    break;
-                case 2:  // 固定解
-                    strcpy(sol, "Fixed");
-                    break;
-                default:
-                    break;
-            }
-            printf("%4d %10.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
-                   rtk.t.week, rtk.t.secOfWeek, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-                   dXyz.x, dXyz.y, dXyz.z, rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-        }
-    }
-*/
     fclose(outFp);
     return 0;
 }
