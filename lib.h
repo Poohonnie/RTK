@@ -32,6 +32,8 @@ struct CONFIG
     char optFileName[200]{};  // 输出文件名
     
     char iptIP[2][20]{};  // 输入IP
+    
+    unsigned short port[2]{};
 };
 
 /***********************************************************************

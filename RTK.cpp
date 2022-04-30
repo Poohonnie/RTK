@@ -18,8 +18,8 @@ void RTK::SelectRefSat()
         
         for(int i = 0; i < sdObs.sdNum; ++i)
         {
-            if(sdObs.satSd[i].prn != prn || sdObs.satSd[i].sys != sys)
-                // 说明这颗卫星不是上一历元的参考星
+            if(sdObs.satSd[i].prn != prn || sdObs.satSd[i].sys != sys || !sdObs.satSd[i].valid)
+                // 说明这颗卫星不是上一历元的参考星 或 观测值不可用
                 continue;
             // 将上一历元参考星继承至这个历元
             int rIndex = spp[0].epkPos.FindSatPosIndex(prn, sys);  // 卫星定位结果, 求单差的时候已经确认一定有结果
