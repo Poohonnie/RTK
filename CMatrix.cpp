@@ -12,11 +12,11 @@ CMatrix::CMatrix() :
 
 CMatrix::CMatrix(const double *arr, int Rows, int Cols)
 {
-    
     if (Rows && Cols)  // 行数列数均不为0
     {
         rows = Rows;
         cols = Cols;
+        delete[] mat;
         mat = new double[Rows * Cols]{};
         for (int i = 0; i < Rows * Cols; ++i)
             mat[i] = arr[i];
@@ -37,6 +37,7 @@ CMatrix::CMatrix(int Rows, int Cols)
     {
         rows = Rows;
         cols = Cols;
+        delete[] mat;
         mat = new double[rows * cols]{};
     } else
     {
@@ -53,6 +54,7 @@ CMatrix::CMatrix(const CMatrix &orig)
     *********************************/
     cols = orig.cols;  // copy列的数目
     rows = orig.rows;  // copy行的数目
+    delete[] mat;
     mat = new double[orig.cols * orig.rows]{};  // 为CMatrix类变量中的mat数组开辟一块内存，大小与orig中的数组大小一致
     memcpy(mat, orig.mat, cols * rows * sizeof(double));  // 数组复制
 }
@@ -123,7 +125,7 @@ void CMatrix::Write(double val, int m, int n) const
 {
     if (m < rows && n < cols && mat != nullptr)
         // m, n 均在矩阵范围内
-        this->mat[m * cols + n] = val;
+        mat[m * cols + n] = val;
     else
         std::cout << "序号不在矩阵范围内" << std::endl;
 }
@@ -196,6 +198,7 @@ CMatrix &CMatrix::operator=(const CMatrix &orig)
         return *this;
     cols = orig.cols;  // copy列的数目
     rows = orig.rows;  // copy行的数目
+    delete[] mat;
     mat = new double[orig.cols * orig.rows];  // 为CMatrix类变量中的mat数组开辟一块内存，大小与orig中的数组大小一致
     memcpy(mat, orig.mat, cols * rows * sizeof(double));  // 数组复制
     return *this;
@@ -430,12 +433,8 @@ void CMatrix::AddRow(double *vec, int aimRow)
     CMatrix temp(rows + 1, cols);  // 全0
     memcpy(temp.mat, mat, aimRow * cols * 8);
     for (int i = 0; i < temp.cols; ++i)
-    {
-        if (fabs(vec[i]) < 1e+60)
-            temp.mat[aimRow * temp.cols + i] = vec[i];
-        else
-            temp.mat[aimRow * temp.cols + i] = 0;
-    }
+        temp.mat[aimRow * temp.cols + i] = vec[i];
+    
     memcpy(temp.mat + (aimRow + 1) * temp.cols, mat + aimRow * cols,
            (rows - aimRow) * cols * 8);  // 将剩下的数复制进来
     *this = temp;

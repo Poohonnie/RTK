@@ -161,6 +161,7 @@ int Client::ServerSPP()
     }
     //fclose(outFp);
     delete[] buf;
+    socketDecode.CloseSocket(sock);
     return 0;
 }
 
@@ -242,6 +243,7 @@ int Client::FileRTK()
                 strcpy(sol, "Fixed");
                 break;
             default:
+                strcpy(sol, "error");
                 break;
         }
 //        if(rtk.sol == 2)  // 本历元成功固定
@@ -364,6 +366,7 @@ int Client::ServerRTK()
                     strcpy(sol, "Fixed");
                     break;
                 default:
+                    strcpy(sol, "error");
                     break;
             }
 //                if(rtk.sol == 2)  // 本历元成功固定
@@ -388,6 +391,8 @@ int Client::ServerRTK()
     }
     
     fclose(outFp);
+    socketDecode[0].CloseSocket(sock[0]);
+    socketDecode[1].CloseSocket(sock[1]);
     return 0;
 }
 

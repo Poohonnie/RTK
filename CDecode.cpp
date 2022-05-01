@@ -12,9 +12,7 @@ bool SATOBS::check()
         valid = false;
         return false;
     } else
-    {
         return true;
-    }
 }
 
 int EPKOBS::FindSatObsIndex(const int prn, const GNSS sys)
@@ -29,7 +27,7 @@ int EPKOBS::FindSatObsIndex(const int prn, const GNSS sys)
 
 bool EPHEMERIS::isGeo() const
 {
-    if ((prn > 0 && prn <= 5) || (prn >= 59 && prn <= 61))
+    if (satSys == GNSS::BDS && (prn > 0 && prn <= 5) || (prn >= 59 && prn <= 61))
         return true;
     else
         return false;
@@ -169,9 +167,7 @@ void CDecode::DecodeOem719Obs(unsigned char *buf)
         raw.epkObs.satObs[n].sys = sys;
         
         raw.epkObs.satObs[n].P[freq] = R8(p + 4);
-        
         raw.epkObs.satObs[n].L[freq] = -wl * R8(p + 16);  // 要乘-1，不然后面通不过
-        
         raw.epkObs.satObs[n].D[freq] = R4(p + 28);
         raw.epkObs.satObs[n].CN0Ratio = R4(p + 32);
         raw.epkObs.satObs[n].locktime = R4(p + 36);
@@ -321,7 +317,7 @@ CFileDecode::~CFileDecode()
 
 int CSocketDecode::DecodeOem719Msg(unsigned char *buf, int curLen, int &lenRem)
 {
-    int i = 0, val = 0;
+    int i{}, val{};
     int len = curLen + lenRem;  // 可读报文总长度
     unsigned char Buff[10240];  // 单个消息缓冲区
     int msgId, msgLen;
@@ -376,33 +372,25 @@ int CSocketDecode::DecodeOem719Msg(unsigned char *buf, int curLen, int &lenRem)
         {
             case 43:
                 //range
-            {
                 DecodeOem719Obs(Buff);
                 lenRem = len - i;
                 memcpy(buf, buf + i, lenRem);
                 return 43;
-            }
             case 42:
                 //BESTPOS
-            {
                 DecodeOem719Bestpos(Buff);
                 val = 42;
                 break;
-            }
             case 7:
                 //GPSEPHEM
-            {
                 DecodeOem719GpsEphem(Buff);
                 val = 7;
                 break;
-            }
             case 1696:
                 //BDSEPHEMERIS
-            {
                 DecodeOem719BdsEphem(Buff);
                 val = 1696;
                 break;
-            }
             default:
                 val = 0;
                 break;
@@ -424,7 +412,7 @@ bool CSocketDecode::OpenSocket(SOCKET &sock, const char IP[], const unsigned sho
             addrSrv.sin_addr.S_un.S_addr = inet_addr(IP);
             addrSrv.sin_family = AF_INET;
             addrSrv.sin_port = htons(Port);
-            connect(sock, (SOCKADDR *) &addrSrv, sizeof(SOCKADDR));
+            connect(sock, (SOCKADDR * ) & addrSrv, sizeof(SOCKADDR));
             return true;
         }
     }
