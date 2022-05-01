@@ -6,7 +6,7 @@ link_libraries(ws2_32)
 include_directories(include)
 add_executable(RTK
         main.cpp
-        lib.h CMatrix.cpp TimeConv.cpp CoorConv.cpp
+        RTKLib.h CMatrix.cpp TimeConv.cpp CoorConv.cpp
         CDecode.h   CDecode.cpp
         SatPos.h    SatPos.cpp
         Detect.h Detect.cpp

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib.h"
+#include "RTKLib.h"
 
 struct GFMW
 {

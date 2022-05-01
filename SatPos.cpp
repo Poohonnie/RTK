@@ -1,4 +1,4 @@
-#include "lib.h"
+#include "RTKLib.h"
 #include "CDecode.h"
 #include <iostream>
 #include <cmath>

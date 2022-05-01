@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <cmath>
 #include <cstring>
-#include "lib.h"
+#include "RTKLib.h"
 
 CMatrix::CMatrix() :
 	mat(nullptr), 

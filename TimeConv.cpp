@@ -1,4 +1,4 @@
-#include "lib.h"
+#include "RTKLib.h"
 #include <cmath>
 
 double SoWSubtraction(double t, double toc)

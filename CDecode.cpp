@@ -1,4 +1,4 @@
-#include "lib.h"
+#include "RTKLib.h"
 #include <cmath>
 #include <fstream>
 #include <winsock2.h>

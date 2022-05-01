@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib.h"
+#include "RTKLib.h"
 #include "SPP.h"
 
 struct SatSD  // 单个卫星单差观测值

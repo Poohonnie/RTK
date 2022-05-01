@@ -1,6 +1,6 @@
 #include <cstring>
 #include <cmath>
-#include "lib.h"
+#include "RTKLib.h"
 #include "CDecode.h"
 #include "Detect.h"
 
