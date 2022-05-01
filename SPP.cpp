@@ -2,7 +2,7 @@
 #include "CDecode.h"
 #include "SatPos.h"
 #include "Detect.h"
-#include "RTKLib.h"
+#include "RTKlib.h"
 #include "SPP.h"
 #include <cmath>
 
@@ -50,11 +50,6 @@ int SPP::StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
     double arrw[MAXCHANNELNUM * 1] = {};  // w矩阵
     
     CMatrix deltaX(5, 1);
-    deltaX.mat[0] = 0;
-    deltaX.mat[1] = 0;
-    deltaX.mat[2] = 0;
-    deltaX.mat[3] = 0;  // tG，GPS信号接收时刻接收机钟差
-    deltaX.mat[4] = 0;  // tC，BDS信号接受时刻接收机钟差
     
     // 测站初始坐标钟差，设置为上一历元解算结果
     this->check();  // 上一历元解算结果自检
@@ -72,12 +67,7 @@ int SPP::StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
     {
         usfNum = 0;
         memset(&sysNum, 0, 4 * sizeof(int));
-        
-        sttnX.mat[0] += deltaX.mat[0];
-        sttnX.mat[1] += deltaX.mat[1];
-        sttnX.mat[2] += deltaX.mat[2];
-        sttnX.mat[3] += deltaX.mat[3];
-        sttnX.mat[4] += deltaX.mat[4];
+        sttnX += deltaX;  // 测站坐标更新
         
         for (int i = 0; i < raw.epkObs.satNum; ++i)
         {
@@ -167,8 +157,7 @@ int SPP::StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
             
             // w矩阵赋值
             arrw[usfNum] = epkGfmw.gfmw[i].PIF - (range + sttnX.mat[arrNum]
-                                                  - constant::c * epkPos.satPos[i].clkBias +
-                                                  epkPos.satPos[i].tropDelay);
+                    - constant::c * epkPos.satPos[i].clkBias + epkPos.satPos[i].tropDelay);
             if (ephem.satSys == GNSS::GPS)
                 ++sysNum[0];
             else if (ephem.satSys == GNSS::BDS)
@@ -198,7 +187,6 @@ int SPP::StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
     this->sttnXyz.x = sttnX.mat[0];
     this->sttnXyz.y = sttnX.mat[1];
     this->sttnXyz.z = sttnX.mat[2];
-    
     this->sttnBlh = XYZ2BLH(sttnXyz, wgs84);
     
     //进行精度评定
@@ -227,10 +215,6 @@ void SPP::StdPntVel(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
     double arrw[MAXCHANNELNUM * 1] = {};  // w矩阵
     //测站钟速矩阵
     CMatrix sttnv(4, 1);
-    sttnv.mat[0] = 0;
-    sttnv.mat[1] = 0;
-    sttnv.mat[2] = 0;
-    sttnv.mat[3] = 0;
     
     for (int i = 0; i < raw.epkObs.satNum; ++i)
     {

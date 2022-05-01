@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <windows.h>
-#include "RTKLib.h"
+#include "RTKlib.h"
 
 constexpr auto MAXCHANNELNUM = 36;
 constexpr auto MAXGPSNUM = 32;

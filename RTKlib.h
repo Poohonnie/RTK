@@ -36,7 +36,7 @@ struct CONFIG
     
     char iptIP[2][20]{};  // 输入IP
     
-    unsigned short port[2]{};
+    unsigned short port[2]{};  // 端口  0:流动站 1:基准站
 };
 
 /***********************************************************************

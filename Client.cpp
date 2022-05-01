@@ -1,4 +1,4 @@
-#include "RTKLib.h"
+#include "RTKlib.h"
 #include "SPP.h"
 #include "RTK.h"
 #include "Client.h"
@@ -103,15 +103,14 @@ int Client::ServerSPP()
     int curLen{};  // 此次接收到的报文总长度
     auto *buf = new unsigned char[204800];
     memset(buf, 0, 204800);
-    auto *socketDecode = new CSocketDecode;  // 解码类
+    CSocketDecode socketDecode{};  // 解码类
     CDetectOutlier detectOutlier;  // 粗差探测类
     SOCKET sock;  // 套接字
     SPP spp;  // 单点定位类
-    unsigned short port = 7180;  // 端口
     int val;  // 解码返回值
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     
-    if (!CSocketDecode::OpenSocket(sock, config.iptIP[0], port))
+    if (!CSocketDecode::OpenSocket(sock, config.iptIP[0], config.port[1]))
     {
         //网络通信失败
         printf("Cannot open socket.\n");
@@ -135,17 +134,16 @@ int Client::ServerSPP()
         {
             printf("Please check out the network.\n");
             delete[] buf;
-            delete socketDecode;
             return -114514;
         }
-        val = socketDecode->DecodeOem719Msg(buf, curLen, lenRem);  // 网络接收到的报文解码
+        val = socketDecode.DecodeOem719Msg(buf, curLen, lenRem);  // 网络接收到的报文解码
         if (val == 43)
         {
-            detectOutlier.DetectOutlier(socketDecode->raw);
-            int flag = spp.StdPntPos(socketDecode->raw, detectOutlier.curEpk, config);
+            detectOutlier.DetectOutlier(socketDecode.raw);
+            int flag = spp.StdPntPos(socketDecode.raw, detectOutlier.curEpk, config);
             if (flag == -114514)  // SPP定位失败
                 continue;
-            spp.StdPntVel(socketDecode->raw, detectOutlier.curEpk, config);
+            spp.StdPntVel(socketDecode.raw, detectOutlier.curEpk, config);
             
             double dNEU[3]{};
             CalDNEU(refXyz, spp.sttnXyz, dNEU);
@@ -162,6 +160,7 @@ int Client::ServerSPP()
         }
     }
     //fclose(outFp);
+    delete[] buf;
     return 0;
 }
 
@@ -283,7 +282,7 @@ int Client::ServerRTK()
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
     
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202205011022.oem719.rtk.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202205011627.oem719.rtk.pos)", "w");
     
     if (!CSocketDecode::OpenSocket(sock[0], config.iptIP[0], config.port[0]))
     {

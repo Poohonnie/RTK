@@ -2,7 +2,7 @@
 
 #include "CDecode.h"
 #include "Detect.h"
-#include "RTKLib.h"
+#include "RTKlib.h"
 #include "SPP.h"
 #include "SDObs.h"
 

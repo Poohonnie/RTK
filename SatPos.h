@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RTKLib.h"
+#include "RTKlib.h"
 #include "CDecode.h"
 
 struct PARAS

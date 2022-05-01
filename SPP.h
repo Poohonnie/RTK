@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RTKLib.h"
+#include "RTKlib.h"
 #include "SatPos.h"
 #include "Detect.h"
 

@@ -1,4 +1,4 @@
-#include "RTKLib.h"
+#include "RTKlib.h"
 #include "SPP.h"
 #include "RTK.h"
 #include <cmath>
@@ -264,7 +264,7 @@ int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw
                 double lR = dRovSats[i][0] / dRovSats[i][3] - dRovRef[sysId1][0] / dRovRef[sysId1][3];
                 double mR = dRovSats[i][1] / dRovSats[i][3] - dRovRef[sysId1][1] / dRovRef[sysId1][3];
                 double nR = dRovSats[i][2] / dRovSats[i][3] - dRovRef[sysId1][2] / dRovRef[sysId1][3];
-                
+    
                 // 一个双差观测值占4行, 所以行数是4*i
                 // +j的意思是P1 P2 L1 L2这四个
                 for (int j = 0; j < 4; ++j)
@@ -277,7 +277,7 @@ int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw
                 // 第2, 3行是相位观测值, 需要加模糊度的系数
                 B.Write(sysId1 == 0 ? constant::wl_l1 : constant::wl_b1, 4 * i + 2, 3 + 2 * i + 0);
                 B.Write(sysId1 == 0 ? constant::wl_l2 : constant::wl_b3, 4 * i + 3, 3 + 2 * i + 1);
-                
+    
                 // 残差向量
                 double rho = dRovSats[i][3] - dRovRef[sysId1][3] - dBaseSats[i][3] + dBaseRef[sysId1][3];
                 double w0 = ddObs.dd[i][0] - rho;
@@ -288,64 +288,63 @@ int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw
                 W.Write(w1, 4 * i + 1, 0);
                 W.Write(w2, 4 * i + 2, 0);
                 W.Write(w3, 4 * i + 3, 0);
-                
+    
                 // 构造权矩阵
-                if (iter == 0)
+                if (iter != 0)
+                    continue;
+                // 目前循环处于第4*i+0 ~ 4*i+3行
+                for (int j = 0; j < ddObs.ddNum; ++j)
                 {
-                    // 目前循环处于第4*i+0 ~ 4*i+3行
-                    for (int j = 0; j < ddObs.ddNum; ++j)
+                    // 4*i+0~4*i+3行, 4*j+0~4*j+3列
+                    // 双差伪距和相位的权矩阵, GPS伪距1m, BDS伪距2m, GPS相位1mm, BDS相位2mm的权重
+                    int sysId2 = (int) ddObs.ddSys[j];  // 卫星系统编号
+        
+                    if (j == i)
                     {
-                        // 4*i+0~4*i+3行, 4*j+0~4*j+3列
-                        // 双差伪距和相位的权矩阵, GPS伪距1m, BDS伪距2m, GPS相位1mm, BDS相位2mm的权重
-                        int sysId2 = (int) ddObs.ddSys[j];  // 卫星系统编号
-                        
-                        if (j == i)
+                        // 行数等于列数, 也就是处在对角线上的4*4分块
+                        // 4*4块内对角线元素为n, 非对角线元素都为0, 不用额外写
+                        double scale = 1.0 * ddObs.sysNum[sysId2] / (ddObs.sysNum[sysId2] + 1.0);  // 方便书写
+                        switch (sysId2)
                         {
-                            // 行数等于列数, 也就是处在对角线上的4*4分块
-                            // 4*4块内对角线元素为n, 非对角线元素都为0, 不用额外写
-                            double scale = 1.0 * ddObs.sysNum[sysId2] / (ddObs.sysNum[sysId2] + 1.0);  // 方便书写
-                            switch (sysId2)
-                            {
-                                case 0/*GPS*/:
-                                    Pxx.Write(1.0000 * scale, 4 * i + 0, 4 * j + 0);  // P1
-                                    Pxx.Write(1.0000 * scale, 4 * i + 1, 4 * j + 1);  // P2
-                                    Pxx.Write(1000.0 * scale, 4 * i + 2, 4 * j + 2);  // L1
-                                    Pxx.Write(1000.0 * scale, 4 * i + 3, 4 * j + 3);  // L2
-                                    break;
-                                case 1/*BDS*/:
-                                    Pxx.Write(0.500 * scale, 4 * i + 0, 4 * j + 0);  // P1
-                                    Pxx.Write(0.500 * scale, 4 * i + 1, 4 * j + 1);  // P2
-                                    Pxx.Write(500.0 * scale, 4 * i + 2, 4 * j + 2);  // L1
-                                    Pxx.Write(500.0 * scale, 4 * i + 3, 4 * j + 3);  // L2
-                                    break;
-                                default:
-                                    break;
-                            }
-                        } else
+                            case 0/*GPS*/:
+                                Pxx.Write(1.0000 * scale, 4 * i + 0, 4 * j + 0);  // P1
+                                Pxx.Write(1.0000 * scale, 4 * i + 1, 4 * j + 1);  // P2
+                                Pxx.Write(1000.0 * scale, 4 * i + 2, 4 * j + 2);  // L1
+                                Pxx.Write(1000.0 * scale, 4 * i + 3, 4 * j + 3);  // L2
+                                break;
+                            case 1/*BDS*/:
+                                Pxx.Write(0.500 * scale, 4 * i + 0, 4 * j + 0);  // P1
+                                Pxx.Write(0.500 * scale, 4 * i + 1, 4 * j + 1);  // P2
+                                Pxx.Write(500.0 * scale, 4 * i + 2, 4 * j + 2);  // L1
+                                Pxx.Write(500.0 * scale, 4 * i + 3, 4 * j + 3);  // L2
+                                break;
+                            default:
+                                break;
+                        }
+                    } else
+                    {
+                        // 不在主对角线上的4*4分块
+                        // 4*4块内非对角线元素都为0
+                        if (sysId1 != sysId2)
+                            // 卫星系统不同, 分块对角线元素是0
+                            continue;
+                        // 所在的行列卫星系统都相同, 对角线元素为-1
+                        switch (sysId2)
                         {
-                            // 不在主对角线上的4*4分块
-                            // 4*4块内非对角线元素都为0
-                            if (sysId1 != sysId2)
-                                // 卫星系统不同, 分块对角线元素是0
-                                continue;
-                            // 所在的行列卫星系统都相同, 对角线元素为-1
-                            switch (sysId2)
-                            {
-                                case 0/*GPS*/:
-                                    Pxx.Write(-1.0000 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 0, 4 * j + 0);  // P1
-                                    Pxx.Write(-1.0000 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 1, 4 * j + 1);  // P2
-                                    Pxx.Write(-1000.0 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 2, 4 * j + 2);  // L1
-                                    Pxx.Write(-1000.0 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 3, 4 * j + 3);  // L2
-                                    break;
-                                case 1/*BDS*/:
-                                    Pxx.Write(-0.500 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 0, 4 * j + 0);  // P1
-                                    Pxx.Write(-0.500 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 1, 4 * j + 1);  // P2
-                                    Pxx.Write(-500.0 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 2, 4 * j + 2);  // L1
-                                    Pxx.Write(-500.0 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 3, 4 * j + 3);  // L2
-                                    break;
-                                default:
-                                    break;
-                            }
+                            case 0/*GPS*/:
+                                Pxx.Write(-1.0000 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 0, 4 * j + 0);  // P1
+                                Pxx.Write(-1.0000 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 1, 4 * j + 1);  // P2
+                                Pxx.Write(-1000.0 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 2, 4 * j + 2);  // L1
+                                Pxx.Write(-1000.0 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 3, 4 * j + 3);  // L2
+                                break;
+                            case 1/*BDS*/:
+                                Pxx.Write(-0.500 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 0, 4 * j + 0);  // P1
+                                Pxx.Write(-0.500 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 1, 4 * j + 1);  // P2
+                                Pxx.Write(-500.0 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 2, 4 * j + 2);  // L1
+                                Pxx.Write(-500.0 / (ddObs.sysNum[sysId2] + 1.0), 4 * i + 3, 4 * j + 3);  // L2
+                                break;
+                            default:
+                                break;
                         }
                     }
                 }
