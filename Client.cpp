@@ -12,11 +12,11 @@
 void Client::SetConfig()
 {
     config.posMode = 1;  // 0:SPP 1:RTK
-    config.iptStream = 1;  // 0:file 1:server
+    config.iptStream = 0;  // 0:file 1:server
     config.elmin = 10 * constant::D2R;  // 高度角阈值 10°
     config.ratioThres = 3.0;  // ratio值阈值 3.0
-    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-2.bin)");  // 流动站文件
-    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-1.bin)");  // 基站文件
+    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202204302240-2.bin)");  // 流动站文件
+    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202204302240-1.bin)");  // 基站文件
 //    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.bin)");  // 流动站文件
 //    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\3.4-basedata-novatel.bin)");  // 基站文件
     
@@ -179,7 +179,7 @@ int Client::FileRTK()
     int flag[2]{};
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
-//    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-2.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202204302240.pos)", "w");
 //    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.pos)", "w");
     double dtime{};
     int epoch{};
@@ -255,19 +255,17 @@ int Client::FileRTK()
 //        }
 //        if(epoch < 1)  // 还没有固定解出现
 //            continue;
-        printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
+        printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
                rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-               dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
+               dNEU[0], dNEU[1], dNEU[2],
                rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-/*
-        fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
+        fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
                 rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-                dXyz.x, dXyz.y, dXyz.z, line, dNEU[0], dNEU[1], dNEU[2],
+                dNEU[0], dNEU[1], dNEU[2],
                 rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
-*/
     }
 
-//    fclose(outFp);
+    fclose(outFp);
     return 0;
 }
 
@@ -285,7 +283,7 @@ int Client::ServerRTK()
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
     
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202204302144.oem719.rtk.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202205011022.oem719.rtk.pos)", "w");
     
     if (!CSocketDecode::OpenSocket(sock[0], config.iptIP[0], config.port[0]))
     {
@@ -295,7 +293,7 @@ int Client::ServerRTK()
     }
     if (!CSocketDecode::OpenSocket(sock[1], config.iptIP[1], config.port[1]))
     {
-        // 流动站通信失败
+        // 基准站通信失败
         printf("Cannot open socket 1.\n");
         return -114514;
     }
