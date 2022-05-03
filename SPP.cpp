@@ -62,7 +62,7 @@ int SPP::StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
     memset(&epkPos, 0, MAXCHANNELNUM * sizeof(SatPos));
     epkPos.satNum = raw.epkObs.satNum;  // 因为两个内容是对齐的, 所以需要循环卫星数目相同(尽管实际参与计算的卫星数并不同)
     
-    int calTimes = 0;  // 迭代计数
+    int calTimes{};  // 迭代计数
     do
     {
         usfNum = 0;
@@ -118,9 +118,7 @@ int SPP::StdPntPos(RAWDATA &raw, EPKGFMW &epkGfmw, CONFIG &config)
             
             // 地球自转改正前的卫星位置
             XYZ satXyzk{};
-            satXyzk.x = epkPos.satPos[i].satXyz.x;
-            satXyzk.y = epkPos.satPos[i].satXyz.y;
-            satXyzk.z = epkPos.satPos[i].satXyz.z;
+            satXyzk = epkPos.satPos[i].satXyz;
             // 地球自转改正角度
             double a = wgs84.omega * deltat1;
             // 地球自转改正后卫星位置

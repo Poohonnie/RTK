@@ -27,7 +27,7 @@ int EPKOBS::FindSatObsIndex(const int prn, const GNSS sys)
 
 bool EPHEMERIS::isGeo() const
 {
-    if (satSys == GNSS::BDS && (prn > 0 && prn <= 5) || (prn >= 59 && prn <= 61))
+    if ((prn > 0 && prn <= 5) || (prn >= 59 && prn <= 61))
         return true;
     else
         return false;

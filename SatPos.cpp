@@ -77,7 +77,7 @@ void SatPos::CalSat(GPSTIME t, const  EPHEMERIS& ephem)
 {
     GPSTIME t0 = t;
     if(ephem.satSys == GNSS::BDS)
-        //BDS使用的是BDSTIME，所以这里要转换
+        // BDS使用的是BDSTIME，所以这里要转换
         t0 = GpsTime2BdsTime(t);
     
     PARAS Para = CalParas(t0, ephem);

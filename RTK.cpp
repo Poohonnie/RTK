@@ -77,7 +77,7 @@ void DDObs::GetDDObs(const SDObs &sdObs)
     // 清空上一历元双差观测值, 保留参考星选取信息
     memset(&this->ddPrn, 0, MAXCHANNELNUM * sizeof(int));
     memset(&this->ddSys, 0, MAXCHANNELNUM * sizeof(GNSS));
-    memset(&this->ddNum, 0, sizeof(int));
+    ddNum = 0;
     memset(&this->sysNum, 0, 4 * sizeof(int));
     memset(&this->dd, 0, MAXCHANNELNUM * 4 * sizeof(double));
     memset(&this->fixedAmb, 0, MAXCHANNELNUM * 2 * sizeof(double));

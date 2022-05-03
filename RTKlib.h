@@ -149,8 +149,8 @@ void CalDNEU(const XYZ &refXyz, const XYZ &sttnXyz, double *dNEU);  // 计算测
 class CMatrix
 {
 public:
-    int rows, cols;
-    double *mat;
+    int rows{}, cols{};
+    double *mat{};
     
     CMatrix();  // 默认构造函数
     CMatrix(const double *Mat, int Rows, int Cols);  // 构造函数

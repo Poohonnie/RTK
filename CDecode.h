@@ -45,7 +45,7 @@ struct EPHEMERIS
     //星历
     GNSS satSys{};
     unsigned short prn{};  // 卫星编号
-    unsigned long health{};  // 卫星健康状态
+    unsigned long health{};  // 卫星健康状态 0: healthy   others: unhealthy
     GPSTIME toeG{};  // GPS时  包含week 和 toe
     BDSTIME toeB{};  // BDS时  包含week 和 toe
     double tgd[2]{};  // Equipment group delay differential

@@ -12,19 +12,19 @@
 void Client::SetConfig()
 {
     config.posMode = 1;  // 0:SPP 1:RTK
-    config.iptStream = 0;  // 0:file 1:server
+    config.iptStream = 1;  // 0:file 1:server
     config.elmin = 10 * constant::D2R;  // 高度角阈值 10°
     config.ratioThres = 3.0;  // ratio值阈值 3.0
-    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202204302240-2.bin)");  // 流动站文件
-    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202204302240-1.bin)");  // 基站文件
+    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202205020006-2.bin)");  // 流动站文件
+    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202205020006-1.bin)");  // 基站文件
 //    strcpy(config.iptFileName[0], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.bin)");  // 流动站文件
 //    strcpy(config.iptFileName[1], R"(C:\Users\Zing\Desktop\Junior2\SNAP2\3.4-basedata-novatel.bin)");  // 基站文件
     
-    strcpy(config.iptIP[0], "47.114.134.129");  // 流动站IP地址
-    strcpy(config.iptIP[1], "47.114.134.129");  // 基站IP地址
+    strcpy(config.iptIP[0], "8.140.46.126");  // 流动站IP地址
+    strcpy(config.iptIP[1], "8.140.46.126");  // 基站IP地址
     
-    config.port[0] = 7180;  // 流动站
-    config.port[1] = 7190;  // 基站
+    config.port[0] = 3002;  // 流动站
+    config.port[1] = 4002;  // 基站
 }
 
 void Client::Run()
@@ -62,13 +62,14 @@ int Client::FileSPP()
     CDetectOutlier detectOutlier{};
     SPP spp{};  // 单点定位类
     char fileName[200]{};
-    strcpy(fileName, R"(C:\Users\Zing\Desktop\Junior1\SNAP1\OEM719-1126\202010261820.oem719)");
+    strcpy(fileName, R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202205020006-1.bin)");
 //    strcpy(fileName, R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202202131000-1.bin)");
     fileDecode.FileRead(fileName);
     int flag{};
-    XYZ refXyz = {-2267794.937, 5009345.236, 3220980.312};  // 真实位置
+//    XYZ refXyz = {-2267794.937, 5009345.236, 3220980.312};  // 真实位置
+    XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     
-    //FILE *outFp = fopen("202010261820.oem719.pos", "w");
+    FILE *outFp = fopen("202205020006-1.oem719.spp.pos", "w");
     while (true)
     {
         flag = fileDecode.DecodeOem719Msg();
@@ -87,13 +88,13 @@ int Client::FileSPP()
                spp.sttnBlh.B * constant::R2D, spp.sttnBlh.L * constant::R2D, spp.sttnBlh.H,
                dNEU[0], dNEU[1], dNEU[2], spp.sttnV[0], spp.sttnV[1], spp.sttnV[2],
                spp.PDOP, spp.sigmaP, spp.sigmaV, spp.sysNum[0], spp.sysNum[1], spp.sysNum[0] + spp.sysNum[1]);
-        /*fprintf(outFp, "%4d %9.3f %12.4f %12.4f %12.4f %11.8f %11.8f %7.3f %6.3f %6.3f %6.3f %7.4f %7.4f %7.4f %5.3f %5.3f %5.3f %3d %3d %3d\n",
+        fprintf(outFp, "%4d %9.3f %12.4f %12.4f %12.4f %11.8f %11.8f %7.3f %6.3f %6.3f %6.3f %7.4f %7.4f %7.4f %5.3f %5.3f %5.3f %3d %3d %3d\n",
                spp.t.week, spp.t.secOfWeek, spp.sttnXyz.x, spp.sttnXyz.y, spp.sttnXyz.z,
                spp.sttnBlh.B * constant::R2D, spp.sttnBlh.L * constant::R2D, spp.sttnBlh.H,
                dNEU[0], dNEU[1], dNEU[2], spp.sttnV[0], spp.sttnV[1], spp.sttnV[2],
-               spp.PDOP, spp.sigmaP, spp.sigmaV, spp.sysNum[0], spp.sysNum[1], spp.sysNum[0] + spp.sysNum[1]);*/
+               spp.PDOP, spp.sigmaP, spp.sigmaV, spp.sysNum[0], spp.sysNum[1], spp.sysNum[0] + spp.sysNum[1]);
     }
-    //fclose(outFp);
+    fclose(outFp);
     return 0;
 }
 
@@ -161,7 +162,7 @@ int Client::ServerSPP()
     }
     //fclose(outFp);
     delete[] buf;
-    socketDecode.CloseSocket(sock);
+    CSocketDecode::CloseSocket(sock);
     return 0;
 }
 
@@ -179,7 +180,7 @@ int Client::FileRTK()
     int flag[2]{};
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202204302240.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-202205020006.file.pos)", "w");
 //    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.pos)", "w");
     double dtime{};
     int epoch{};
@@ -284,7 +285,7 @@ int Client::ServerRTK()
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
     XYZ totalXyz{};
     
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202205011627.oem719.rtk.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\server.rtk.202205022310.pos)", "w");
     
     if (!CSocketDecode::OpenSocket(sock[0], config.iptIP[0], config.port[0]))
     {
@@ -303,7 +304,7 @@ int Client::ServerRTK()
     while (epoch < 10 * 3600)
     {
         if (lenRem[0] < 51200)
-            Sleep(980);
+            Sleep(960);
         if (lenRem[1] > 204800)
         {
             memset(&buf[1], 0, 204800 * sizeof(unsigned char));
@@ -391,8 +392,8 @@ int Client::ServerRTK()
     }
     
     fclose(outFp);
-    socketDecode[0].CloseSocket(sock[0]);
-    socketDecode[1].CloseSocket(sock[1]);
+    CSocketDecode::CloseSocket(sock[0]);
+    CSocketDecode::CloseSocket(sock[1]);
     return 0;
 }
 
