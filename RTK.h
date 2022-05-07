@@ -39,7 +39,7 @@ private:
     SDObs sdObs{};  // 站间单差
     DDObs ddObs{};  // 站星双差
     SPP spp[2]{};  // 不同接收机的解算(定位)结果  0:rover 1:base;
-    CDetectSlip detectSlip;  // 单差观测值粗差探测
+    CDetectSlip detectSlip;  // 单差观测值周跳探测
     
 public:
     friend class Client;

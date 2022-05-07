@@ -178,11 +178,8 @@ int Client::FileRTK()
     CFileDecode lastBase{};  // 上一历元的基准站数据
     int flag[2]{};
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
-    XYZ totalXyz{};
-    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\202205032330.pos)", "w");
-//    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\Novatel0304.pos)", "w");
+    FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\oem719-short-202205031653.file.pos)", "w");
     double dtime{};
-    int epoch{};
     while (true)
     {
         flag[0] = fileDecode[0].DecodeOem719Msg();  // 先解码流动站, 以流动站时间为基准
@@ -246,32 +243,14 @@ int Client::FileRTK()
                 strcpy(sol, "error");
                 break;
         }
-//        if(rtk.sol == 2)  // 本历元成功固定
-//        {
-//            ++epoch;
-//            totalXyz = totalXyz + rtk.pos;  // 坐标值综合, 方便下面求平均
-//            refXyz.x = totalXyz.x / epoch;  // 固定解平均值作为参考坐标
-//            refXyz.y = totalXyz.y / epoch;
-//            refXyz.z = totalXyz.z / epoch;
-//        }
-//        if(epoch < 1)  // 还没有固定解出现
-//            continue;
-//        printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %8.4f %8.4f %8.4f %2d %2d %7.2f  %s\n",
-//               rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-//               dNEU[0], dNEU[1], dNEU[2],
-//               rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-        printf("%4d %10.3f %13.4f %13.4f %13.4f %13.4f %13.4f %13.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %2d %2d %3d %3d %3d %7.2f %s\n",
-                rtk.t.week, rtk.t.secOfWeek, rtk.pos.x, rtk.pos.y, rtk.pos.z, refXyz.x, refXyz.y, refXyz.z,
-                dNEU[0], dNEU[1], dNEU[2], rtk.delta, rtk.m[0], rtk.m[1], rtk.m[2], rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1],
-                rtk.ddObs.refSatPrn[0], rtk.ddObs.refSatPrn[1], rtk.ddObs.sysNum[0] + rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-        fprintf(outFp, "%4d %10.3f %13.4f %13.4f %13.4f %13.4f %13.4f %13.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %2d %2d %3d %3d %3d %7.2f %s\n",
-                rtk.t.week, rtk.t.secOfWeek, rtk.pos.x, rtk.pos.y, rtk.pos.z, refXyz.x, refXyz.y, refXyz.z,
-                dNEU[0], dNEU[1], dNEU[2], rtk.delta, rtk.m[0], rtk.m[1], rtk.m[2], rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1],
-                rtk.ddObs.refSatPrn[0], rtk.ddObs.refSatPrn[1], rtk.ddObs.sysNum[0] + rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-//        fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %2d %7.2f %2d\n",
-//                rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-//                refXyz.x, refXyz.y, refXyz.z, dNEU[0], dNEU[1], dNEU[2],
-//                rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ddObs.sysNum[0] + rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
+        printf("%4d %10.3f %6.3f %13.4f %13.4f %13.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %3d %3d %3d %3d %7.2f %s\n",
+                rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
+                dNEU[0], dNEU[1], dNEU[2], rtk.m[0], rtk.m[1], rtk.m[2], rtk.ddObs.refSatPrn[0], rtk.ddObs.refSatPrn[1],
+                rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
+        fprintf(outFp, "%4d %10.3f %6.3f %13.4f %13.4f %13.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %3d %3d %3d %3d %7.2f %2d\n",
+                rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
+                dNEU[0], dNEU[1], dNEU[2], rtk.m[0], rtk.m[1], rtk.m[2], rtk.ddObs.refSatPrn[0], rtk.ddObs.refSatPrn[1],
+                rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
     }
 
     fclose(outFp);
@@ -290,7 +269,6 @@ int Client::ServerRTK()
     RTK rtk{};  // RTK类
     int val[2]{};  // 解码返回值
     XYZ refXyz = {-2267804.5263, 5009342.3723, 3220991.8632};
-    XYZ totalXyz{};
     
     FILE *outFp = fopen(R"(C:\Users\Zing\Desktop\Junior2\SNAP2\server.rtk.short.202205031653-3.pos)", "w");
     
@@ -377,23 +355,13 @@ int Client::ServerRTK()
                     strcpy(sol, "error");
                     break;
             }
-//                if(rtk.sol == 2)  // 本历元成功固定
-//                {
-//                    ++epoch;
-//                    totalXyz = totalXyz + rtk.pos;  // 坐标值综合, 方便下面求平均
-//                    refXyz.x = totalXyz.x / epoch;  // 固定解平均值作为参考坐标
-//                    refXyz.y = totalXyz.y / epoch;
-//                    refXyz.z = totalXyz.z / epoch;
-//                }
-//                if(epoch < 1)  // 还没有固定解出现
-//                    continue;
-            printf("%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f  %s\n",
+            printf("%4d %10.3f %6.3f %13.4f %13.4f %13.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %3d %3d %3d %3d %7.2f %s\n",
                    rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-                   dNEU[0], dNEU[1], dNEU[2],
+                   dNEU[0], dNEU[1], dNEU[2], rtk.m[0], rtk.m[1], rtk.m[2], rtk.ddObs.refSatPrn[0], rtk.ddObs.refSatPrn[1],
                    rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, &sol);
-            fprintf(outFp, "%4d %10.3f %7.3f %13.4f %13.4f %13.4f %7.4f %7.4f %7.4f %2d %2d %7.2f %2d\n",
+            fprintf(outFp, "%4d %10.3f %6.3f %13.4f %13.4f %13.4f %8.4f %8.4f %8.4f %8.4f %8.4f %8.4f %3d %3d %3d %3d %7.2f %2d\n",
                     rtk.t.week, rtk.t.secOfWeek, dtime, rtk.pos.x, rtk.pos.y, rtk.pos.z,
-                    dNEU[0], dNEU[1], dNEU[2],
+                    dNEU[0], dNEU[1], dNEU[2], rtk.m[0], rtk.m[1], rtk.m[2], rtk.ddObs.refSatPrn[0], rtk.ddObs.refSatPrn[1],
                     rtk.ddObs.sysNum[0], rtk.ddObs.sysNum[1], rtk.ratio, rtk.sol);
         }
     }

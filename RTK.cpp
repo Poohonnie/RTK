@@ -70,6 +70,15 @@ void RTK::SelectRefSat()
             }
         }
     }
+    for (int i = 0; i < 4; ++i)
+    {
+        if (!ddObs.selected[i])
+        {
+            // 某个系统参考星选取失败
+            ddObs.refSatPrn[i] = 0;
+            ddObs.refSatIndex[i] = 0;
+        }
+    }
 }
 
 void DDObs::GetDDObs(const SDObs &sdObs)
@@ -164,9 +173,9 @@ int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw
             printf("%4d %10.3f Fail to select reference satellite!\n", t.week, t.secOfWeek);
             return -114514;
         }
-        if (ddObs.sysNum[0] + ddObs.sysNum[1] < 4)
+        if (ddObs.sysNum[0] + ddObs.sysNum[1] < 5)
         {
-            // 双差观测值数少于4就不进行计算了
+            // 双差观测值数少于5就不进行计算了
             printf("%4d %10.3f Have no enough ddObs. GPS: %2d, BDS: %2d.\n",
                    t.week, t.secOfWeek, ddObs.sysNum[0], ddObs.sysNum[1]);
             return -114514;
