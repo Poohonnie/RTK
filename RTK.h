@@ -30,6 +30,8 @@ private:
     XYZ pos{};  // 流动站最终定位结果
     
     double resAmb[2]{};  // 浮点解中的模糊度残差
+    double m[3]{};  // 基线分量的中误差
+    double delta{};  // 标准差
     bool valid{};  // true为有解
     unsigned short sol{};  // 0:single 1:float 2:fixed
     double ratio{};  // 模糊度固定情况ratio > 3即为可用

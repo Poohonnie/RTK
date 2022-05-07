@@ -117,6 +117,8 @@ int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw
     // 初始化, 清空上一历元结果
     memset(&pos, 0, sizeof(XYZ));
     memset(&resAmb, 0, sizeof(double) * 2);
+    memset(&m, 0, sizeof(double) * 3);
+    delta = 0.0;
     valid = false;
     sol = 0;
     ratio = 0.0;
@@ -162,9 +164,9 @@ int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw
             printf("%4d %10.3f Fail to select reference satellite!\n", t.week, t.secOfWeek);
             return -114514;
         }
-        if (ddObs.sysNum[0] + ddObs.sysNum[1] < 5)
+        if (ddObs.sysNum[0] + ddObs.sysNum[1] < 4)
         {
-            // 双差观测值数少于5就不进行计算了
+            // 双差观测值数少于4就不进行计算了
             printf("%4d %10.3f Have no enough ddObs. GPS: %2d, BDS: %2d.\n",
                    t.week, t.secOfWeek, ddObs.sysNum[0], ddObs.sysNum[1]);
             return -114514;
@@ -357,6 +359,10 @@ int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw
             CMatrix BTPl = BTP * W;
             dX = BTPB_inv * BTPl;  // 改正项
             dX0 += dX;  // 基线向量更新
+            // 精度评定
+            delta = sqrt((W.Trans() * Pxx * W).Read(0, 0) / (rowNum - colNum));
+            for (int k = 0; k < 3; ++k)
+                m[k] = delta * sqrt(BTPB_inv.Read(k, k));
             // 更新测站坐标
             pos.x = basePos.x + dX0.Read(0, 0);
             pos.y = basePos.y + dX0.Read(1, 0);
@@ -420,6 +426,10 @@ int RTK::CalFixedSolution(RAWDATA &roverRaw, RAWDATA &baseRaw, EPKGFMW &rEpkGfmw
         CMatrix BTPl = BT * Pxx * W;
         dX = BTPB_inv * BTPl;  // 改正项
         dX0 -= dX;  // 基线向量更新
+        // 精度评定
+        delta = sqrt((W.Trans() * Pxx * W).Read(0, 0) / (rowNum - colNum));
+        for (int k = 0; k < 3; ++k)
+            m[k] = delta * sqrt(BTPB_inv.Read(k, k));
         // 更新测站坐标
         pos.x = basePos.x + dX0.Read(0, 0);
         pos.y = basePos.y + dX0.Read(1, 0);
